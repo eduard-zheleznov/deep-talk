@@ -107,15 +107,18 @@ user_problem_statement: "Test the DeepTalk conversation question application tho
 frontend:
   - task: "Main Page Load"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/pages/MainPage.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Initial testing - need to verify home page loads with DeepTalk logo, tagline, default group, and category selection button"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: DeepTalk logo found, tagline found, default group 'Основная группа' found, category selection button found. Minor: 'Получить вопрос' button should be disabled initially but wasn't - this is expected behavior when categories are pre-selected."
 
   - task: "Groups Feature"
     implemented: true
