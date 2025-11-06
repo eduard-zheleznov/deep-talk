@@ -152,15 +152,18 @@ frontend:
 
   - task: "Getting Questions"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/QuestionCard.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Need to test question generation, display, check/arrow buttons, and question flow"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: 'Получить вопрос' button enables correctly after category selection, questions generate properly (example: 'Как ты определяешь, правильно ли поступаешь?'), question card displays with category badge, check and arrow action buttons found and functional. Question flow works correctly."
 
   - task: "Timer Feature"
     implemented: true
