@@ -182,15 +182,18 @@ frontend:
 
   - task: "History Panel"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/HistoryPanel.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Need to test history panel, accordion categories, question status icons, reset functionality"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: History panel opens correctly via icon button, 'История вопросов' title displays, panel functionality confirmed. History tracking and display working properly."
 
   - task: "Category Management"
     implemented: true
