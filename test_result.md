@@ -259,6 +259,8 @@ metadata:
   created_by: "testing_agent"
   version: "1.0"
   test_sequence: 1
+  testing_completed: true
+  all_tests_passed: true
 
 test_plan:
   current_focus: []
