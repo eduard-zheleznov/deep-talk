@@ -242,15 +242,18 @@ frontend:
 
   - task: "Error Handling"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/utils/questionManager.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Need to test error scenarios like no available questions and no categories selected"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: Question button correctly disabled when no categories selected, error handling for empty states working properly. Error scenarios handled appropriately."
 
 metadata:
   created_by: "testing_agent"
