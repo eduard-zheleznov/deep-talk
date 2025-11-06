@@ -137,15 +137,18 @@ frontend:
 
   - task: "Category Selection"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/CategorySelector.jsx"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Need to test category selection dialog, select all/reset buttons, individual toggles, and save functionality"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: Category selection dialog opens correctly, all 5 default categories found (Отношения, Мечты и цели, Ценности, Эмоции и чувства, Воспоминания), 'Выбрать все' and 'Сбросить' buttons work, individual category selection works, save functionality works. Minor: Category count in button text not always updating immediately but functionality works."
 
   - task: "Getting Questions"
     implemented: true
