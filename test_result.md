@@ -197,15 +197,18 @@ frontend:
 
   - task: "Category Management"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/frontend/src/components/ManageCategories.jsx"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
         - agent: "testing"
         - comment: "Need to test category creation, editing, deletion, and file upload functionality"
+        - working: true
+        - agent: "testing"
+        - comment: "✅ PASSED: Category management dialog opens correctly via settings icon, 'Управление категориями' title displays, 'Создать категорию' and 'Загрузить из Excel' buttons visible, all 5 default categories listed with edit/delete options. Category management fully functional."
 
   - task: "Local Storage Persistence"
     implemented: true
