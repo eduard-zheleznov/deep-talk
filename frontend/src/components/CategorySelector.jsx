@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
@@ -8,6 +8,11 @@ import { Settings2 } from 'lucide-react';
 export const CategorySelector = ({ categories, onUpdate, children }) => {
   const [open, setOpen] = useState(false);
   const [localCategories, setLocalCategories] = useState(categories);
+
+  // Update local state when categories prop changes
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   const handleToggle = (categoryId) => {
     setLocalCategories(prev =>
