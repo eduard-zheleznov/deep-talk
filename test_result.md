@@ -261,16 +261,10 @@ metadata:
   test_sequence: 1
 
 test_plan:
-  current_focus:
-    - "Main Page Load"
-    - "Groups Feature"
-    - "Category Selection"
-    - "Getting Questions"
-    - "History Panel"
-    - "Local Storage Persistence"
+  current_focus: []
   stuck_tasks: []
-  test_all: true
-  test_priority: "high_first"
+  test_all: false
+  test_priority: "completed"
 
 agent_communication:
     - agent: "testing"
