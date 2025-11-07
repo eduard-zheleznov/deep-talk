@@ -10,6 +10,7 @@ import { ManageCategories } from '../components/ManageCategories';
 import { storage } from '../utils/storage';
 import { questionManager } from '../utils/questionManager';
 import { toast } from 'sonner';
+import { Users, Settings2 } from 'lucide-react';
 
 export const MainPage = () => {
   const [groups, setGroups] = useState([]);
@@ -162,14 +163,48 @@ export const MainPage = () => {
     toast.success('Вопрос возвращён в список');
   };
 
+  const handleLogoClick = () => {
+    // Reset to home view
+    setShowQuestion(false);
+    setCurrentQuestion(null);
+  };
+
   const hasEnabledCategories = categories.some(cat => cat.enabled);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted flex flex-col">
       {/* Header */}
       <header className="border-b border-border/40 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <DeepTalkLogo />
+          <div className="flex items-center gap-6">
+            <button onClick={handleLogoClick} className="hover:opacity-80 transition-opacity">
+              <DeepTalkLogo />
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <GroupSelector
+                groups={groups}
+                activeGroupId={activeGroupId}
+                onSelectGroup={handleSelectGroup}
+                onCreateGroup={handleCreateGroup}
+                onUpdateGroup={handleUpdateGroup}
+                onDeleteGroup={handleDeleteGroup}
+              >
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Users className="w-5 h-5" />
+                </Button>
+              </GroupSelector>
+              
+              <CategorySelector
+                categories={categories}
+                onUpdate={handleUpdateCategories}
+              >
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Settings2 className="w-5 h-5" />
+                </Button>
+              </CategorySelector>
+            </div>
+          </div>
           
           <div className="flex items-center gap-2">
             <ManageCategories
@@ -187,30 +222,13 @@ export const MainPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 md:py-12">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col">
+        <div className="max-w-3xl mx-auto w-full space-y-8">
           {/* Hero Section */}
           <div className="text-center space-y-3">
             <p className="text-muted-foreground text-base md:text-lg">
               Выбери темы и получай случайные вопросы для вдохновляющих разговоров
             </p>
-          </div>
-
-          {/* Controls */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <GroupSelector
-              groups={groups}
-              activeGroupId={activeGroupId}
-              onSelectGroup={handleSelectGroup}
-              onCreateGroup={handleCreateGroup}
-              onUpdateGroup={handleUpdateGroup}
-              onDeleteGroup={handleDeleteGroup}
-            />
-            
-            <CategorySelector
-              categories={categories}
-              onUpdate={handleUpdateCategories}
-            />
           </div>
 
           {/* Get Question Button */}
@@ -226,7 +244,7 @@ export const MainPage = () => {
           </div>
 
           {/* Question Display */}
-          {showQuestion && (
+          {showQuestion && currentQuestion && (
             <div className="space-y-6">
               <QuestionCard
                 question={currentQuestion}
@@ -237,38 +255,11 @@ export const MainPage = () => {
               <TimerSection />
             </div>
           )}
-
-          {/* Empty State */}
-          {!showQuestion && (
-            <div className="text-center py-12 space-y-4">
-              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <svg
-                  className="w-12 h-12 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-medium text-foreground">Готовы начать?</h3>
-                <p className="text-muted-foreground">
-                  Выберите категории и нажмите "Получить вопрос"
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 mt-16">
+      <footer className="border-t border-border/40 mt-auto">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>DeepTalk — глубокие разговоры начинаются здесь</p>
         </div>

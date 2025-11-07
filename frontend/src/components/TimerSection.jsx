@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import { Play, Pause } from 'lucide-react';
 
-const TIMER_OPTIONS = [60, 120, 180, 240, 300]; // in seconds
+const TIMER_OPTIONS = [60, 120, 300]; // 1, 2, 5 minutes in seconds
 
 export const TimerSection = ({ className = '' }) => {
   const [activeTimer, setActiveTimer] = useState(null);

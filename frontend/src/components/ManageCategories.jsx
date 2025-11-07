@@ -7,6 +7,7 @@ import { Label } from './ui/label';
 import { ScrollArea } from './ui/scroll-area';
 import { Settings, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
-import { questionManager } from '../utils/questionManager';
 
 export const ManageCategories = ({ categories, onUpdate }) => {
   const [open, setOpen] = useState(false);
@@ -30,7 +30,8 @@ export const ManageCategories = ({ categories, onUpdate }) => {
   const handleEdit = (category) => {
     setEditingCategory(category);
     setCategoryName(category.name);
-    setQuestions(category.questions.join('\n'));
+    // Use special separator for multi-line questions
+    setQuestions(category.questions.join('\n\n'));
     setEditDialogOpen(true);
   };
 
@@ -47,8 +48,9 @@ export const ManageCategories = ({ categories, onUpdate }) => {
       return;
     }
 
+    // Split by double newline for better separation
     const questionList = questions
-      .split('\n')
+      .split(/\n\n+/)
       .map(q => q.trim())
       .filter(q => q);
 
@@ -99,8 +101,32 @@ export const ManageCategories = ({ categories, onUpdate }) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const text = e.target?.result;
-        const parsed = questionManager.parseExcelData(text);
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: ['category', 'question'], defval: '' });
+        
+        // Group questions by category
+        const categoriesMap = {};
+        jsonData.forEach((row) => {
+          const category = row.category?.toString().trim();
+          const question = row.question?.toString().trim();
+          
+          if (category && question) {
+            if (!categoriesMap[category]) {
+              categoriesMap[category] = [];
+            }
+            categoriesMap[category].push(question);
+          }
+        });
+        
+        // Convert to category format
+        const parsed = Object.keys(categoriesMap).map((name, index) => ({
+          id: `custom_${index}_${Date.now()}`,
+          name,
+          enabled: true,
+          questions: categoriesMap[name],
+        }));
         
         if (parsed.length === 0) {
           toast.error('Не удалось распознать категории и вопросы');
@@ -111,10 +137,14 @@ export const ManageCategories = ({ categories, onUpdate }) => {
         toast.success(`Загружено ${parsed.length} категорий`);
         setOpen(false);
       } catch (error) {
+        console.error('Error parsing file:', error);
         toast.error('Ошибка при чтении файла');
       }
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
+    
+    // Reset input
+    event.target.value = '';
   };
 
   return (
@@ -125,13 +155,13 @@ export const ManageCategories = ({ categories, onUpdate }) => {
             <Settings className="w-5 h-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Управление категориями</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <div className="flex gap-2">
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={handleCreate} className="gap-2 flex-1">
                 <Plus className="w-4 h-4" />
                 Создать категорию
@@ -141,36 +171,39 @@ export const ManageCategories = ({ categories, onUpdate }) => {
                   <Button type="button" variant="secondary" className="w-full gap-2" asChild>
                     <span>
                       <Upload className="w-4 h-4" />
-                      Загрузить из Excel
+                      <span className="hidden sm:inline">Загрузить из</span> Excel
                     </span>
                   </Button>
                 </div>
                 <Input
                   id="file-upload"
                   type="file"
-                  accept=".txt,.csv,.tsv"
+                  accept=".xlsx,.xls"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
               </Label>
             </div>
 
-            <div className="p-3 bg-muted rounded-lg text-xs text-muted-foreground">
-              <p className="font-medium mb-1">Формат файла Excel (сохранить как .txt или .csv):</p>
-              <p>Колонка A: Название категории</p>
-              <p>Колонка B: Вопрос</p>
-              <p className="mt-1">Каждая строка = один вопрос. Разделитель: табуляция.</p>
+            <div className="p-3 bg-muted rounded-lg text-xs text-muted-foreground space-y-2">
+              <p className="font-medium">При загрузке через Excel такие правила:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Название категории пишите в колонке A</li>
+                <li>Сам вопрос пишите напротив, в колонке B</li>
+                <li>Категорию писать рядом С КАЖДЫМ вопросом</li>
+                <li>Для одного вопроса используется только 1 строка</li>
+              </ol>
             </div>
             
-            <ScrollArea className="h-[400px] pr-4">
+            <ScrollArea className="flex-1 pr-4">
               <div className="space-y-2">
                 {categories.map((category) => (
                   <div
                     key={category.id}
                     className="flex items-center gap-2 p-4 rounded-lg border hover:bg-muted transition-colors"
                   >
-                    <div className="flex-1">
-                      <h4 className="font-medium">{category.name}</h4>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">{category.name}</h4>
                       <p className="text-sm text-muted-foreground">
                         {category.questions.length} вопросов
                       </p>
@@ -180,6 +213,7 @@ export const ManageCategories = ({ categories, onUpdate }) => {
                       onClick={() => handleEdit(category)}
                       variant="ghost"
                       size="icon"
+                      className="flex-shrink-0"
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -188,7 +222,7 @@ export const ManageCategories = ({ categories, onUpdate }) => {
                       onClick={() => setDeleteConfirm(category)}
                       variant="ghost"
                       size="icon"
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive flex-shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -202,13 +236,13 @@ export const ManageCategories = ({ categories, onUpdate }) => {
 
       {/* Edit/Create Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <div className="space-y-2">
               <Label htmlFor="categoryName">Название категории</Label>
               <Input
@@ -219,14 +253,14 @@ export const ManageCategories = ({ categories, onUpdate }) => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="questions">Вопросы (по одному на строку)</Label>
+            <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+              <Label htmlFor="questions">Вопросы (разделяйте пустой строкой)</Label>
               <Textarea
                 id="questions"
-                placeholder="Введите вопросы, каждый с новой строки..."
+                placeholder="Введите вопросы, разделяя их пустой строкой...&#10;&#10;Например:&#10;О чём ты мечтал в детстве?&#10;&#10;Что для тебя означает успех?"
                 value={questions}
                 onChange={(e) => setQuestions(e.target.value)}
-                rows={12}
+                className="flex-1 min-h-[200px] resize-none"
               />
             </div>
             
