@@ -7,6 +7,7 @@ import { CategorySelector } from '../components/CategorySelector';
 import { GroupSelector } from '../components/GroupSelector';
 import { HistoryPanel } from '../components/HistoryPanel';
 import { ManageCategories } from '../components/ManageCategories';
+import { InstructionsDialog } from '../components/InstructionsDialog';
 import { storage } from '../utils/storage';
 import { questionManager } from '../utils/questionManager';
 import { toast } from 'sonner';
@@ -181,6 +182,8 @@ export const MainPage = () => {
               <DeepTalkLogo />
             </button>
             
+            <InstructionsDialog />
+            
             <div className="flex items-center gap-2">
               <GroupSelector
                 groups={groups}
@@ -224,13 +227,6 @@ export const MainPage = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col">
         <div className="max-w-3xl mx-auto w-full space-y-8">
-          {/* Hero Section */}
-          <div className="text-center space-y-3">
-            <p className="text-muted-foreground text-base md:text-lg">
-              Выбери темы и получай случайные вопросы для вдохновляющих разговоров
-            </p>
-          </div>
-
           {/* Get Question Button */}
           <div className="flex justify-center">
             <Button
