@@ -14,13 +14,13 @@ export const InstructionsDialog = () => {
           <Info className="w-5 h-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Инструкция</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 text-sm">
+        <ScrollArea className="flex-1 pr-4 -mr-4">
+          <div className="space-y-6 text-sm pr-4">
             <p className="text-base">
               Данный сервис создан для того чтобы сделать ваше общение более ценным и интересным.
             </p>

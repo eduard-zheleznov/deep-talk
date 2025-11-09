@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from './ui/alert-dialog';
 
-export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGroup, onUpdateGroup, onDeleteGroup }) => {
+export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGroup, onUpdateGroup, onDeleteGroup, children }) => {
   const [open, setOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -60,10 +60,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="lg" className="gap-2">
-            <Users className="w-5 h-5" />
-            {activeGroup ? activeGroup.name : 'Выбрать группу'}
-          </Button>
+          {children}
         </DialogTrigger>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -137,11 +134,11 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
 
       {/* Create/Edit Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingGroup ? 'Редактировать группу' : 'Создать группу'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="groupName">Название группы</Label>
               <Input
@@ -154,6 +151,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
                     editingGroup ? handleUpdate() : handleCreate();
                   }
                 }}
+                autoFocus
               />
             </div>
             <Button
