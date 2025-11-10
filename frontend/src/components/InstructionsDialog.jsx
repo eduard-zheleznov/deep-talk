@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
 import { Info } from 'lucide-react';
 
 export const InstructionsDialog = () => {
@@ -14,13 +13,13 @@ export const InstructionsDialog = () => {
           <Info className="w-5 h-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Инструкция</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="flex-1 pr-4 -mr-4">
-          <div className="space-y-6 text-sm pr-4">
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+          <div className="space-y-6 text-sm">
             <p className="text-base">
               Данный сервис создан для того чтобы сделать ваше общение более ценным и интересным.
             </p>
@@ -67,7 +66,7 @@ export const InstructionsDialog = () => {
               </div>
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -177,14 +177,16 @@ export const MainPage = () => {
       {/* Header */}
       <header className="border-b border-border/40 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+          <div className="flex items-center">
             <button onClick={handleLogoClick} className="hover:opacity-80 transition-opacity">
               <DeepTalkLogo />
             </button>
             
-            <InstructionsDialog />
+            <div className="ml-6">
+              <InstructionsDialog />
+            </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-6">
               <GroupSelector
                 groups={groups}
                 activeGroupId={activeGroupId}
@@ -209,7 +211,7 @@ export const MainPage = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-6">
             <ManageCategories
               categories={categories}
               onUpdate={handleUpdateCategories}
@@ -225,7 +227,7 @@ export const MainPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col">
+      <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col justify-start">
         <div className="max-w-3xl mx-auto w-full space-y-8">
           {/* Get Question Button */}
           <div className="flex justify-center">
@@ -255,7 +257,7 @@ export const MainPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 mt-auto">
+      <footer className="border-t border-border/40 mt-8">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>DeepTalk — глубокие разговоры начинаются здесь</p>
         </div>

@@ -4,7 +4,6 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { ScrollArea } from './ui/scroll-area';
 import { Settings, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
@@ -30,7 +29,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
   const handleEdit = (category) => {
     setEditingCategory(category);
     setCategoryName(category.name);
-    // Use special separator for multi-line questions
     setQuestions(category.questions.join('\n\n'));
     setEditDialogOpen(true);
   };
@@ -48,7 +46,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
       return;
     }
 
-    // Split by double newline for better separation
     const questionList = questions
       .split(/\n\n+/)
       .map(q => q.trim())
@@ -60,7 +57,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
     }
 
     if (editingCategory) {
-      // Update existing
       const updated = categories.map(cat =>
         cat.id === editingCategory.id
           ? { ...cat, name: categoryName.trim(), questions: questionList }
@@ -69,7 +65,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
       onUpdate(updated);
       toast.success('Категория обновлена');
     } else {
-      // Create new
       const newCategory = {
         id: `custom_${Date.now()}`,
         name: categoryName.trim(),
@@ -106,7 +101,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: ['category', 'question'], defval: '' });
         
-        // Group questions by category
         const categoriesMap = {};
         jsonData.forEach((row) => {
           const category = row.category?.toString().trim();
@@ -120,7 +114,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
           }
         });
         
-        // Convert to category format
         const parsed = Object.keys(categoriesMap).map((name, index) => ({
           id: `custom_${index}_${Date.now()}`,
           name,
@@ -142,8 +135,6 @@ export const ManageCategories = ({ categories, onUpdate }) => {
       }
     };
     reader.readAsArrayBuffer(file);
-    
-    // Reset input
     event.target.value = '';
   };
 
@@ -155,12 +146,12 @@ export const ManageCategories = ({ categories, onUpdate }) => {
             <Settings className="w-5 h-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Управление категориями</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
             <div className="flex flex-col sm:flex-row gap-2">
               <Button onClick={handleCreate} className="gap-2 flex-1">
                 <Plus className="w-4 h-4" />
@@ -195,7 +186,7 @@ export const ManageCategories = ({ categories, onUpdate }) => {
               </ol>
             </div>
             
-            <ScrollArea className="flex-1 pr-4">
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
               <div className="space-y-2">
                 {categories.map((category) => (
                   <div
@@ -229,20 +220,20 @@ export const ManageCategories = ({ categories, onUpdate }) => {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Edit/Create Dialog */}
+      {/* Edit/Create Dialog - positioned at top for mobile */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col top-[10%] translate-y-0">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
             <div className="space-y-2">
               <Label htmlFor="categoryName">Название категории</Label>
               <Input
@@ -250,21 +241,22 @@ export const ManageCategories = ({ categories, onUpdate }) => {
                 placeholder="Например: Мечты и цели"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
+                className="h-12"
               />
             </div>
             
-            <div className="space-y-2 flex-1 overflow-hidden flex flex-col">
+            <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
               <Label htmlFor="questions">Вопросы (разделяйте пустой строкой)</Label>
               <Textarea
                 id="questions"
                 placeholder="Введите вопросы, разделяя их пустой строкой...&#10;&#10;Например:&#10;О чём ты мечтал в детстве?&#10;&#10;Что для тебя означает успех?"
                 value={questions}
                 onChange={(e) => setQuestions(e.target.value)}
-                className="flex-1 min-h-[200px] resize-none"
+                className="flex-1 resize-none min-h-[200px] border-2"
               />
             </div>
             
-            <Button onClick={handleSave} className="w-full">
+            <Button onClick={handleSave} className="w-full h-12">
               {editingCategory ? 'Сохранить' : 'Создать'}
             </Button>
           </div>

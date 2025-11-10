@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { ScrollArea } from './ui/scroll-area';
 import { Users, Plus, Pencil, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -62,12 +61,12 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
         <DialogTrigger asChild>
           {children}
         </DialogTrigger>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Группы</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
             <Button
               onClick={() => {
                 setEditingGroup(null);
@@ -80,7 +79,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
               Создать группу
             </Button>
             
-            <ScrollArea className="h-[400px] pr-4">
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
               <div className="space-y-2">
                 {groups.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-8">
@@ -127,14 +126,14 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
                   ))
                 )}
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Create/Edit Dialog */}
+      {/* Create/Edit Dialog - positioned at top for mobile keyboard */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md top-[20%] translate-y-0">
           <DialogHeader>
             <DialogTitle>{editingGroup ? 'Редактировать группу' : 'Создать группу'}</DialogTitle>
           </DialogHeader>
@@ -152,11 +151,12 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
                   }
                 }}
                 autoFocus
+                className="h-12"
               />
             </div>
             <Button
               onClick={editingGroup ? handleUpdate : handleCreate}
-              className="w-full"
+              className="w-full h-12"
               disabled={!groupName.trim()}
             >
               {editingGroup ? 'Сохранить' : 'Создать'}

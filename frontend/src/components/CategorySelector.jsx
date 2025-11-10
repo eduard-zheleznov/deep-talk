@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
-import { ScrollArea } from './ui/scroll-area';
 import { Settings2 } from 'lucide-react';
 
 export const CategorySelector = ({ categories, onUpdate, children }) => {
@@ -47,12 +46,12 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Категории вопросов</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
           <div className="flex gap-2">
             <Button onClick={handleSelectAll} variant="secondary" size="sm" className="flex-1">
               Выбрать все
@@ -62,7 +61,7 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
             </Button>
           </div>
           
-          <ScrollArea className="h-[400px] pr-4">
+          <div className="flex-1 overflow-y-auto pr-2 -mr-2">
             <div className="space-y-3">
               {localCategories.map((category) => (
                 <div
@@ -88,7 +87,7 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
                 </div>
               ))}
             </div>
-          </ScrollArea>
+          </div>
           
           <Button onClick={handleSave} className="w-full" size="lg">
             Сохранить
