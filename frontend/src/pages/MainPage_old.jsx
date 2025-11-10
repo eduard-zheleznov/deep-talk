@@ -21,10 +21,12 @@ export const MainPage = () => {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [showQuestion, setShowQuestion] = useState(false);
 
+  // Initialize on mount
   useEffect(() => {
     const loadedGroups = storage.getGroups();
     
     if (loadedGroups.length === 0) {
+      // Create default group
       const defaultGroup = {
         id: `group_${Date.now()}`,
         name: 'Основная группа',
@@ -42,6 +44,7 @@ export const MainPage = () => {
     }
   }, []);
 
+  // Load data when active group changes
   useEffect(() => {
     if (activeGroupId) {
       const loadedCategories = storage.getCategories(activeGroupId);
@@ -53,6 +56,7 @@ export const MainPage = () => {
     }
   }, [activeGroupId]);
 
+  // Group management
   const handleCreateGroup = (name) => {
     const newGroup = {
       id: `group_${Date.now()}`,
@@ -80,6 +84,7 @@ export const MainPage = () => {
     const updatedGroups = groups.filter(g => g.id !== groupId);
     
     if (updatedGroups.length === 0) {
+      // Create a default group if all are deleted
       const defaultGroup = {
         id: `group_${Date.now()}`,
         name: 'Основная группа',
@@ -104,11 +109,13 @@ export const MainPage = () => {
     storage.setActiveGroup(groupId);
   };
 
+  // Category management
   const handleUpdateCategories = (updatedCategories) => {
     setCategories(updatedCategories);
     storage.saveCategories(activeGroupId, updatedCategories);
   };
 
+  // Question management
   const handleGetQuestion = () => {
     const question = questionManager.getRandomQuestion(categories, history);
     
@@ -128,6 +135,7 @@ export const MainPage = () => {
     setHistory(updatedHistory);
     storage.saveQuestionHistory(activeGroupId, updatedHistory);
     
+    // Get next question
     handleGetQuestion();
   };
 
@@ -157,6 +165,7 @@ export const MainPage = () => {
   };
 
   const handleLogoClick = () => {
+    // Reset to home view
     setShowQuestion(false);
     setCurrentQuestion(null);
   };
@@ -165,6 +174,7 @@ export const MainPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted flex flex-col">
+      {/* Header */}
       <header className="border-b border-border/40 backdrop-blur-sm bg-background/80 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -216,8 +226,10 @@ export const MainPage = () => {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col justify-start">
         <div className="max-w-3xl mx-auto w-full space-y-8">
+          {/* Get Question Button */}
           <div className="flex justify-center">
             <Button
               onClick={handleGetQuestion}
@@ -229,6 +241,7 @@ export const MainPage = () => {
             </Button>
           </div>
 
+          {/* Question Display */}
           {showQuestion && currentQuestion && (
             <div className="space-y-6">
               <QuestionCard
@@ -243,6 +256,7 @@ export const MainPage = () => {
         </div>
       </main>
 
+      {/* Footer */}
       <footer className="border-t border-border/40 mt-8">
         <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
           <p>DeepTalk — глубокие разговоры начинаются здесь</p>
