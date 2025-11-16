@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
-import { Info } from 'lucide-react';
+import { FileText, X } from 'lucide-react';
 
 export const InstructionsDialog = () => {
   const [open, setOpen] = useState(false);
