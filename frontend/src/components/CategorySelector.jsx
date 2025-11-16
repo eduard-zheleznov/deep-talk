@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { Settings2 } from 'lucide-react';
+import { CheckSquare, X } from 'lucide-react';
 
 export const CategorySelector = ({ categories, onUpdate, children }) => {
   const [open, setOpen] = useState(false);
