@@ -8,6 +8,7 @@ import { GroupSelector } from '../components/GroupSelector';
 import { HistoryPanel } from '../components/HistoryPanel';
 import { ManageCategories } from '../components/ManageCategories';
 import { InstructionsDialog } from '../components/InstructionsDialog';
+import { SupportDialog } from '../components/SupportDialog';
 import { storage } from '../utils/storage';
 import { questionManager } from '../utils/questionManager';
 import { toast } from 'sonner';
