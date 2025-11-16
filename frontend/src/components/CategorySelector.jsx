@@ -60,7 +60,7 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
       <DialogTrigger asChild>
         {children || (
           <Button variant="outline" size="lg" className="gap-2">
-            <Settings2 className="w-5 h-5" />
+            <CheckSquare className="w-5 h-5" />
             Выбрать категории ({selectedCount})
           </Button>
         )}
