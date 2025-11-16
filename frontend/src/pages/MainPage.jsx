@@ -194,7 +194,7 @@ export const MainPage = () => {
                 categories={categories}
                 onUpdate={handleUpdateCategories}>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <Settings2 className="w-5 h-5" />
+                  <CheckSquare className="w-5 h-5" />
                 </Button>
               </CategorySelector>
             </div>
