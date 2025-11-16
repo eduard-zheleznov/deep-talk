@@ -41,18 +41,13 @@ export const InstructionsDialog = () => {
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild>
-          <div className="relative inline-block">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
-            >
-              <Info className={`w-5 h-5 ${!hasViewed ? 'animate-pulse-gentle' : ''}`} />
-            </Button>
-            {!hasViewed && (
-              <span className="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full animate-ping" />
-            )}
-          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={`rounded-full relative ${!hasViewed ? 'animate-pulse-gentle' : ''}`}
+          >
+            <Info className="w-5 h-5" />
+          </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader className="text-center">
