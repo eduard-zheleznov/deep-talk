@@ -27,7 +27,7 @@ export const MainPage = () => {
     if (loadedGroups.length === 0) {
       const defaultGroup = {
         id: `group_${Date.now()}`,
-        name: 'Основная группа',
+        name: 'Первая группа',
         createdAt: Date.now(),
       };
       storage.saveGroups([defaultGroup]);
@@ -82,7 +82,7 @@ export const MainPage = () => {
     if (updatedGroups.length === 0) {
       const defaultGroup = {
         id: `group_${Date.now()}`,
-        name: 'Основная группа',
+        name: 'Первая группа',
         createdAt: Date.now(),
       };
       updatedGroups.push(defaultGroup);
@@ -172,11 +172,11 @@ export const MainPage = () => {
               <DeepTalkLogo />
             </button>
             
-            <div className="ml-6">
+            <div className="ml-4">
               <InstructionsDialog />
             </div>
             
-            <div className="flex items-center gap-2 ml-6">
+            <div className="flex items-center gap-2 ml-4">
               <GroupSelector
                 groups={groups}
                 activeGroupId={activeGroupId}
@@ -192,8 +192,7 @@ export const MainPage = () => {
               
               <CategorySelector
                 categories={categories}
-                onUpdate={handleUpdateCategories}
-              >
+                onUpdate={handleUpdateCategories}>
                 <Button variant="ghost" size="icon" className="rounded-full">
                   <Settings2 className="w-5 h-5" />
                 </Button>
@@ -201,7 +200,7 @@ export const MainPage = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 ml-6">
+          <div className="flex items-center gap-2 ml-4">
             <ManageCategories
               categories={categories}
               onUpdate={handleUpdateCategories}
@@ -240,14 +239,13 @@ export const MainPage = () => {
               <TimerSection />
             </div>
           )}
+          
+          {/* Footer inline after content */}
+          <div className="pt-8 text-center text-sm text-muted-foreground">
+            <p>DeepTalk — глубокие разговоры начинаются здесь</p>
+          </div>
         </div>
       </main>
-
-      <footer className="border-t border-border/40 mt-8">
-        <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>DeepTalk — глубокие разговоры начинаются здесь</p>
-        </div>
-      </footer>
     </div>
   );
 };

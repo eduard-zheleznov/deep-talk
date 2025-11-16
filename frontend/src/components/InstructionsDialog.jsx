@@ -19,51 +19,26 @@ export const InstructionsDialog = () => {
         </DialogHeader>
         
         <div className="flex-1 overflow-y-auto pr-2 -mr-2">
-          <div className="space-y-6 text-sm">
-            <p className="text-base">
-              Данный сервис создан для того чтобы сделать ваше общение более ценным и интересным.
+          <div className="space-y-6">
+            <p className="text-sm text-muted-foreground">
+              Сервис создан, чтобы сделать общение более ценным и интересным.
             </p>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-base">Пошаговая инструкция:</h3>
-              
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Шаг №1:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Шаг №2:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-muted/50">
-                  <h4 className="font-medium mb-2">Шаг №3:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
+              <div className="relative w-full" style={{ paddingBottom: '177.78%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                  title="Инструкция DeepTalk"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
               </div>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t">
-              <h3 className="font-semibold text-base">Примечания:</h3>
               
-              <div className="space-y-3">
-                <div className="p-4 rounded-lg bg-accent/10">
-                  <h4 className="font-medium mb-2">Примечание №1:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-accent/10">
-                  <h4 className="font-medium mb-2">Примечание №2:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
-
-                <div className="p-4 rounded-lg bg-accent/10">
-                  <h4 className="font-medium mb-2">Примечание №3:</h4>
-                  <p className="text-muted-foreground">Тут будет текст</p>
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Посмотрите видео, чтобы узнать как пользоваться сервисом
+              </p>
             </div>
           </div>
         </div>

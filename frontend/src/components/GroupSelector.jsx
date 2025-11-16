@@ -133,7 +133,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
 
       {/* Create/Edit Dialog - positioned at top for mobile keyboard */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="sm:max-w-md top-[20%] translate-y-0">
+        <DialogContent className="sm:max-w-md top-[15%] translate-y-0">
           <DialogHeader>
             <DialogTitle>{editingGroup ? 'Редактировать группу' : 'Создать группу'}</DialogTitle>
           </DialogHeader>
@@ -142,7 +142,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
               <Label htmlFor="groupName">Название группы</Label>
               <Input
                 id="groupName"
-                placeholder="Например: Мама, Друзья, Команда"
+                placeholder="Напишите, с кем будете общаться."
                 value={groupName}
                 onChange={(e) => setGroupName(e.target.value)}
                 onKeyPress={(e) => {

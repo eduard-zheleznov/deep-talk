@@ -71,65 +71,54 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export const storage = {
-  // Get all groups
   getGroups() {
     const data = localStorage.getItem(STORAGE_KEYS.GROUPS);
     return data ? JSON.parse(data) : [];
   },
 
-  // Save groups
   saveGroups(groups) {
     localStorage.setItem(STORAGE_KEYS.GROUPS, JSON.stringify(groups));
   },
 
-  // Get active group ID
   getActiveGroup() {
     return localStorage.getItem(STORAGE_KEYS.ACTIVE_GROUP);
   },
 
-  // Set active group ID
   setActiveGroup(groupId) {
     localStorage.setItem(STORAGE_KEYS.ACTIVE_GROUP, groupId);
   },
 
-  // Get categories for a specific group
   getCategories(groupId) {
     const key = `${STORAGE_KEYS.CATEGORIES}_${groupId}`;
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
   },
 
-  // Save categories for a specific group
   saveCategories(groupId, categories) {
     const key = `${STORAGE_KEYS.CATEGORIES}_${groupId}`;
     localStorage.setItem(key, JSON.stringify(categories));
   },
 
-  // Get question history for a group
   getQuestionHistory(groupId) {
     const key = `deeptalk_history_${groupId}`;
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : { used: [], skipped: [] };
   },
 
-  // Save question history for a group
   saveQuestionHistory(groupId, history) {
     const key = `deeptalk_history_${groupId}`;
     localStorage.setItem(key, JSON.stringify(history));
   },
 
-  // Reset history for a group
   resetHistory(groupId) {
     const key = `deeptalk_history_${groupId}`;
     localStorage.setItem(key, JSON.stringify({ used: [], skipped: [] }));
   },
 
-  // Clear all data (for testing)
   clearAll() {
     localStorage.clear();
   },
 
-  // Export default categories for reference
   getDefaultCategories() {
     return JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
   },
