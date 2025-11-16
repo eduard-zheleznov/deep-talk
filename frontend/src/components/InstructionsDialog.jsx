@@ -46,7 +46,7 @@ export const InstructionsDialog = () => {
             size="icon" 
             className={`rounded-full relative ${!hasViewed ? 'animate-pulse-gentle' : ''}`}
           >
-            <Info className="w-5 h-5" />
+            <FileText className="w-5 h-5" />
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
