@@ -273,3 +273,5 @@ agent_communication:
     - message: "Starting comprehensive testing of DeepTalk Russian conversation question app. Will test all core features including groups, categories, questions, timers, history, and persistence."
     - agent: "testing"
     - message: "TESTING COMPLETED SUCCESSFULLY: All 10 core features tested and working properly. DeepTalk Russian conversation question app is fully functional with no critical issues found. Main page loads correctly, category selection works, questions generate properly, timers function, groups can be created/managed, history panel works, category management is functional, local storage persists data, mobile responsiveness confirmed, and error handling works. Ready for production use."
+    - agent: "main"
+    - message: "Starting UI/UX improvements based on user feedback. Tasks: 1) Fix auto-translation meta tag, 2) Redesign ManageCategories as 2-step process with fixed input/radio styling, 3) Fix instruction icon pulse position, 4) Add Support dialog in footer, 5) Replace icons for Instructions and Category Selection, 6) Unify all close buttons with circular background."
