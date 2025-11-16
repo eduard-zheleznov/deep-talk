@@ -171,61 +171,100 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
       </Dialog>
 
       {/* Edit/Create Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[75vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
+      <Dialog open={editDialogOpen} onOpenChange={(isOpen) => {
+        setEditDialogOpen(isOpen);
+        if (!isOpen) {
+          setStep(1);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[75vh] flex flex-col sm:top-1/2 top-20 -translate-y-0 sm:-translate-y-1/2">
+          <DialogHeader className="relative">
+            <DialogTitle className="text-center pr-8">
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
+            <button
+              onClick={() => setEditDialogOpen(false)}
+              className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Закрыть</span>
+            </button>
           </DialogHeader>
-          <div className="space-y-3 flex-1 flex flex-col overflow-hidden min-h-0">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">Название категории</Label>
-              <Input
-                id="categoryName"
-                placeholder="Например: Мечты и цели"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="h-10 focus:ring-2 focus:ring-primary focus:ring-offset-0"
-              />
-            </div>
-            
-            {!editingCategory && (
-              <div className="space-y-2">
-                <Label>Применить категорию</Label>
-                <RadioGroup value={categoryScope} onValueChange={setCategoryScope}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="current" id="current" />
-                    <Label htmlFor="current" className="font-normal cursor-pointer">
-                      Для текущей группы
-                    </Label>
+          
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
+            {/* Step 1: Name and Scope */}
+            {step === 1 && (
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="space-y-2">
+                  <Label htmlFor="categoryName">Напишите название категории</Label>
+                  <Input
+                    id="categoryName"
+                    placeholder="Например: Мечты и цели"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    className="h-12 text-base rounded-lg border-2 focus:border-primary focus:ring-0 focus:ring-offset-0"
+                    autoFocus
+                  />
+                </div>
+                
+                {!editingCategory && (
+                  <div className="space-y-3">
+                    <Label>Применить категорию</Label>
+                    <RadioGroup value={categoryScope} onValueChange={setCategoryScope} className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem value="current" id="current" className="w-5 h-5 border-2" />
+                        <Label htmlFor="current" className="font-normal cursor-pointer text-base">
+                          Для текущей группы
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <RadioGroupItem value="all" id="all" className="w-5 h-5 border-2" />
+                        <Label htmlFor="all" className="font-normal cursor-pointer text-base">
+                          Для всех групп
+                        </Label>
+                      </div>
+                    </RadioGroup>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="all" />
-                    <Label htmlFor="all" className="font-normal cursor-pointer">
-                      Для всех групп
-                    </Label>
-                  </div>
-                </RadioGroup>
+                )}
+                
+                <div className="flex-1" />
+                
+                <Button onClick={handleNextStep} className="w-full h-12 text-base">
+                  Далее
+                </Button>
               </div>
             )}
             
-            <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
-              <Label htmlFor="questions">Вопросы (разделяйте пустой строкой)</Label>
-              <div className="flex-1 overflow-y-auto">
-                <Textarea
-                  id="questions"
-                  placeholder={`Введите вопросы, разделяя их пустой строкой. Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nТвоя главная цель до конца года?`}
-                  value={questions}
-                  onChange={(e) => setQuestions(e.target.value)}
-                  className="min-h-[150px] h-full resize-none rounded-lg border-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
-                />
+            {/* Step 2: Questions */}
+            {step === 2 && (
+              <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
+                <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
+                  <Label htmlFor="questions">Напишите вопросы (разделяя пустой строкой)</Label>
+                  <div className="text-sm text-muted-foreground mb-1">
+                    Например:
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <Textarea
+                      id="questions"
+                      placeholder="Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?"
+                      value={questions}
+                      onChange={(e) => setQuestions(e.target.value)}
+                      className="min-h-full h-full resize-none rounded-lg border-2 focus:border-primary focus:ring-0 focus:ring-offset-0 text-base"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
+                    Назад
+                  </Button>
+                  <Button onClick={handleSave} className="flex-1 h-12 text-base">
+                    {editingCategory ? 'Сохранить' : 'Создать'}
+                  </Button>
+                </div>
               </div>
-            </div>
-            
-            <Button onClick={handleSave} className="w-full h-10">
-              {editingCategory ? 'Сохранить' : 'Создать'}
-            </Button>
+            )}
           </div>
         </DialogContent>
       </Dialog>
