@@ -244,19 +244,16 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             
             {/* Step 2: Questions */}
             {step === 2 && (
-              <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="space-y-3 flex-1 flex flex-col overflow-hidden min-h-0">
                 <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
                   <Label htmlFor="questions">Напишите вопросы (разделяя пустой строкой)</Label>
-                  <div className="text-sm text-muted-foreground mb-1">
-                    Например:
-                  </div>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden min-h-[300px]">
                     <Textarea
                       id="questions"
-                      placeholder="Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?"
+                      placeholder="Например:&#10;&#10;Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?"
                       value={questions}
                       onChange={(e) => setQuestions(e.target.value)}
-                      className="min-h-full h-full resize-none rounded-lg border-2 focus:border-primary focus:ring-0 focus:ring-offset-0 text-base"
+                      className="min-h-full h-full resize-none rounded-2xl border-2 focus:border-primary focus:ring-0 focus:ring-offset-0 text-base"
                       autoFocus
                     />
                   </div>
