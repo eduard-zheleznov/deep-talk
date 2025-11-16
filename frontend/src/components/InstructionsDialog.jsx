@@ -51,7 +51,7 @@ export const InstructionsDialog = () => {
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader className="text-center relative">
-            <DialogTitle className="text-center pr-8">Инструкция</DialogTitle>
+            <DialogTitle className="text-center">Инструкция</DialogTitle>
             <button
               onClick={() => setOpen(false)}
               className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"

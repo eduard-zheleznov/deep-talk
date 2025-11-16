@@ -122,7 +122,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader className="text-center relative">
-            <DialogTitle className="text-center pr-8">Управление категориями</DialogTitle>
+            <DialogTitle className="text-center">Управление категориями</DialogTitle>
             <button
               onClick={() => setOpen(false)}
               className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
@@ -186,7 +186,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
       }}>
         <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[75vh] flex flex-col sm:top-1/2 top-20 -translate-y-0 sm:-translate-y-1/2">
           <DialogHeader className="relative">
-            <DialogTitle className="text-center pr-8">
+            <DialogTitle className="text-center">
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
             <button
