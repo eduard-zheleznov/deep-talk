@@ -5,7 +5,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Settings, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Settings, Plus, Pencil, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
   const [categoryName, setCategoryName] = useState('');
   const [questions, setQuestions] = useState('');
   const [categoryScope, setCategoryScope] = useState('current'); // 'current' or 'all'
+  const [step, setStep] = useState(1); // Step 1: name and scope, Step 2: questions
 
   const handleEdit = (category) => {
     setEditingCategory(category);
