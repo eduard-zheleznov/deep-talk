@@ -216,13 +216,13 @@ export const MainPage = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 md:py-12 flex-1 flex flex-col justify-start">
-        <div className="max-w-3xl mx-auto w-full space-y-8">
-          <div className="flex justify-center">
+      <main className="container mx-auto px-4 flex-1 flex flex-col justify-start overflow-y-auto">
+        <div className="max-w-3xl mx-auto w-full space-y-8 py-8 md:py-12">
+          <div className="flex justify-center sticky top-0 z-10 py-4 bg-gradient-to-b from-background via-background to-transparent">
             <Button
               onClick={handleGetQuestion}
               size="lg"
-              className="btn-smooth px-12 py-6 text-lg font-medium rounded-full"
+              className="btn-smooth px-12 py-6 text-lg font-medium rounded-full shadow-md"
               disabled={!hasEnabledCategories}
             >
               Получить вопрос
