@@ -32,6 +32,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
     setEditingCategory(category);
     setCategoryName(category.name);
     setQuestions(category.questions.join('\n\n'));
+    setStep(1);
     setEditDialogOpen(true);
   };
 
@@ -40,7 +41,20 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
     setCategoryName('');
     setQuestions('');
     setCategoryScope('current');
+    setStep(1);
     setEditDialogOpen(true);
+  };
+  
+  const handleNextStep = () => {
+    if (!categoryName.trim()) {
+      toast.error('Введите название категории');
+      return;
+    }
+    setStep(2);
+  };
+  
+  const handleBack = () => {
+    setStep(1);
   };
 
   const handleSave = () => {
