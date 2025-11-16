@@ -142,7 +142,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-md top-[15%] translate-y-0">
           <DialogHeader className="relative">
-            <DialogTitle className="pr-8">{editingGroup ? 'Редактировать группу' : 'Создать группу'}</DialogTitle>
+            <DialogTitle className="">{editingGroup ? 'Редактировать группу' : 'Создать группу'}</DialogTitle>
             <button
               onClick={() => setCreateDialogOpen(false)}
               className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
