@@ -184,7 +184,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
           setStep(1);
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[75vh] flex flex-col sm:top-1/2 top-20 -translate-y-0 sm:-translate-y-1/2">
+        <DialogContent className="max-w-2xl max-h-[100vh] sm:max-h-[85vh] flex flex-col">
           <DialogHeader className="relative">
             <DialogTitle className="text-center">
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
