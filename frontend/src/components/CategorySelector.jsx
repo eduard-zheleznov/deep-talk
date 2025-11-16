@@ -2,18 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { Settings2 } from 'lucide-react';
 
 export const CategorySelector = ({ categories, onUpdate, children }) => {
   const [open, setOpen] = useState(false);
   const [localCategories, setLocalCategories] = useState(categories);
 
-  // Update local state when categories prop changes
   useEffect(() => {
     setLocalCategories(categories);
   }, [categories]);
 
-  const handleToggle = (categoryId) => {
+  const handleToggleCategory = (categoryId) => {
     setLocalCategories(prev =>
       prev.map(cat =>
         cat.id === categoryId ? { ...cat, enabled: !cat.enabled } : cat
@@ -21,8 +21,27 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
     );
   };
 
+  const handleToggleQuestion = (categoryId, questionIndex) => {
+    setLocalCategories(prev =>
+      prev.map(cat => {
+        if (cat.id === categoryId) {
+          const disabledQuestions = cat.disabledQuestions || [];
+          const isDisabled = disabledQuestions.includes(questionIndex);
+          
+          return {
+            ...cat,
+            disabledQuestions: isDisabled
+              ? disabledQuestions.filter(i => i !== questionIndex)
+              : [...disabledQuestions, questionIndex]
+          };
+        }
+        return cat;
+      })
+    );
+  };
+
   const handleSelectAll = () => {
-    setLocalCategories(prev => prev.map(cat => ({ ...cat, enabled: true })));
+    setLocalCategories(prev => prev.map(cat => ({ ...cat, enabled: true, disabledQuestions: [] })));
   };
 
   const handleReset = () => {
@@ -46,9 +65,9 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Категории вопросов</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogHeader className="text-center">
+          <DialogTitle className="text-center">Выбор категорий и вопросов</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
@@ -62,31 +81,54 @@ export const CategorySelector = ({ categories, onUpdate, children }) => {
           </div>
           
           <div className="flex-1 overflow-y-auto pr-2 -mr-2">
-            <div className="space-y-3">
-              {localCategories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <Checkbox
-                    id={category.id}
-                    checked={category.enabled}
-                    onCheckedChange={() => handleToggle(category.id)}
-                  />
-                  <div className="flex-1 space-y-1">
-                    <label
-                      htmlFor={category.id}
-                      className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                      {category.name}
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      {category.questions?.length || 0} вопросов
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Accordion type="multiple" className="space-y-2">
+              {localCategories.map((category) => {
+                const disabledQuestions = category.disabledQuestions || [];
+                const activeQuestionsCount = category.questions.length - disabledQuestions.length;
+                
+                return (
+                  <AccordionItem key={category.id} value={category.id} className="border rounded-lg px-4">
+                    <AccordionTrigger className="hover:no-underline">
+                      <div className="flex items-center justify-between w-full pr-2">
+                        <div className="flex items-center gap-3">
+                          <Checkbox
+                            checked={category.enabled}
+                            onCheckedChange={() => handleToggleCategory(category.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="font-medium">{category.name}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {activeQuestionsCount}/{category.questions.length} вопросов
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 pt-2">
+                        {category.questions.map((question, index) => {
+                          const isDisabled = disabledQuestions.includes(index);
+                          
+                          return (
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                            >
+                              <Checkbox
+                                checked={!isDisabled}
+                                onCheckedChange={() => handleToggleQuestion(category.id, index)}
+                              />
+                              <p className={`flex-1 text-sm leading-relaxed ${isDisabled ? 'text-muted-foreground line-through' : ''}`}>
+                                {question}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
           </div>
           
           <Button onClick={handleSave} className="w-full" size="lg">

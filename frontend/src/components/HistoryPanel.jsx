@@ -58,13 +58,13 @@ export const HistoryPanel = ({ categories, history, onResetHistory, onUnmarkQues
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-transparent">
           <History className="w-5 h-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>История вопросов</SheetTitle>
+        <SheetHeader className="text-center">
+          <SheetTitle className="text-center">История вопросов</SheetTitle>
         </SheetHeader>
         
         <div className="mt-6 space-y-4">

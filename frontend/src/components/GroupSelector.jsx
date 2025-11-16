@@ -62,8 +62,8 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
           {children}
         </DialogTrigger>
         <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Группы</DialogTitle>
+          <DialogHeader className="text-center">
+            <DialogTitle className="text-center">Группы</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
@@ -131,7 +131,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
         </DialogContent>
       </Dialog>
 
-      {/* Create/Edit Dialog - positioned at top for mobile keyboard */}
+      {/* Create/Edit Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-md top-[15%] translate-y-0">
           <DialogHeader>
@@ -151,7 +151,7 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
                   }
                 }}
                 autoFocus
-                className="h-12"
+                className="h-12 focus:ring-2 focus:ring-primary focus:ring-offset-0"
               />
             </div>
             <Button
