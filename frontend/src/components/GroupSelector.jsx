@@ -62,8 +62,15 @@ export const GroupSelector = ({ groups, activeGroupId, onSelectGroup, onCreateGr
           {children}
         </DialogTrigger>
         <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-center">Группы</DialogTitle>
+          <DialogHeader className="text-center relative">
+            <DialogTitle className="text-center pr-8">Группы</DialogTitle>
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Закрыть</span>
+            </button>
           </DialogHeader>
           
           <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
