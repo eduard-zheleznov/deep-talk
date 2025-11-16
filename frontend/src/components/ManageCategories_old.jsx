@@ -4,9 +4,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Settings, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Settings, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,14 +18,13 @@ import {
   AlertDialogTitle,
 } from './ui/alert-dialog';
 
-export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroups, onUpdateForAllGroups }) => {
+export const ManageCategories = ({ categories, onUpdate }) => {
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [categoryName, setCategoryName] = useState('');
   const [questions, setQuestions] = useState('');
-  const [categoryScope, setCategoryScope] = useState('current'); // 'current' or 'all'
 
   const handleEdit = (category) => {
     setEditingCategory(category);
@@ -38,7 +37,6 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
     setEditingCategory(null);
     setCategoryName('');
     setQuestions('');
-    setCategoryScope('current');
     setEditDialogOpen(true);
   };
 
@@ -58,29 +56,23 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
       return;
     }
 
-    const newCategory = {
-      id: editingCategory ? editingCategory.id : `custom_${Date.now()}`,
-      name: categoryName.trim(),
-      enabled: true,
-      questions: questionList,
-    };
-
     if (editingCategory) {
       const updated = categories.map(cat =>
-        cat.id === editingCategory.id ? newCategory : cat
+        cat.id === editingCategory.id
+          ? { ...cat, name: categoryName.trim(), questions: questionList }
+          : cat
       );
       onUpdate(updated);
       toast.success('Категория обновлена');
     } else {
-      if (categoryScope === 'all') {
-        // Apply to all groups
-        onUpdateForAllGroups(newCategory);
-        toast.success('Категория создана для всех групп');
-      } else {
-        // Apply only to current group
-        onUpdate([...categories, newCategory]);
-        toast.success('Категория создана');
-      }
+      const newCategory = {
+        id: `custom_${Date.now()}`,
+        name: categoryName.trim(),
+        enabled: true,
+        questions: questionList,
+      };
+      onUpdate([...categories, newCategory]);
+      toast.success('Категория создана');
     }
 
     setEditDialogOpen(false);
@@ -97,6 +89,55 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
     }
   };
 
+  const handleFileUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: ['category', 'question'], defval: '' });
+        
+        const categoriesMap = {};
+        jsonData.forEach((row) => {
+          const category = row.category?.toString().trim();
+          const question = row.question?.toString().trim();
+          
+          if (category && question) {
+            if (!categoriesMap[category]) {
+              categoriesMap[category] = [];
+            }
+            categoriesMap[category].push(question);
+          }
+        });
+        
+        const parsed = Object.keys(categoriesMap).map((name, index) => ({
+          id: `custom_${index}_${Date.now()}`,
+          name,
+          enabled: true,
+          questions: categoriesMap[name],
+        }));
+        
+        if (parsed.length === 0) {
+          toast.error('Не удалось распознать категории и вопросы');
+          return;
+        }
+
+        onUpdate(parsed);
+        toast.success(`Загружено ${parsed.length} категорий`);
+        setOpen(false);
+      } catch (error) {
+        console.error('Error parsing file:', error);
+        toast.error('Ошибка при чтении файла');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    event.target.value = '';
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -106,15 +147,44 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
           </Button>
         </DialogTrigger>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader className="text-center">
-            <DialogTitle className="text-center">Управление категориями</DialogTitle>
+          <DialogHeader>
+            <DialogTitle>Управление категориями</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
-            <Button onClick={handleCreate} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Создать категорию
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={handleCreate} className="gap-2 flex-1">
+                <Plus className="w-4 h-4" />
+                Создать категорию
+              </Button>
+              <Label htmlFor="file-upload" className="flex-1">
+                <div className="cursor-pointer">
+                  <Button type="button" variant="secondary" className="w-full gap-2" asChild>
+                    <span>
+                      <Upload className="w-4 h-4" />
+                      <span className="hidden sm:inline">Загрузить из</span> Excel
+                    </span>
+                  </Button>
+                </div>
+                <Input
+                  id="file-upload"
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </Label>
+            </div>
+
+            <div className="p-3 bg-muted rounded-lg text-xs text-muted-foreground space-y-2">
+              <p className="font-medium">При загрузке через Excel такие правила:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Название категории пишите в колонке A</li>
+                <li>Сам вопрос пишите напротив, в колонке B</li>
+                <li>Категорию писать рядом С КАЖДЫМ вопросом</li>
+                <li>Для одного вопроса используется только 1 строка</li>
+              </ol>
+            </div>
             
             <div className="flex-1 overflow-y-auto pr-2 -mr-2">
               <div className="space-y-2">
@@ -155,15 +225,15 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
         </DialogContent>
       </Dialog>
 
-      {/* Edit/Create Dialog */}
+      {/* Edit/Create Dialog - fixed positioning */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[75vh] flex flex-col">
+        <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0 py-2">
             <div className="space-y-2">
               <Label htmlFor="categoryName">Название категории</Label>
               <Input
@@ -171,44 +241,22 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
                 placeholder="Например: Мечты и цели"
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
-                className="h-10 focus:ring-2 focus:ring-primary focus:ring-offset-0"
+                className="h-12"
               />
             </div>
             
-            {!editingCategory && (
-              <div className="space-y-2">
-                <Label>Применить категорию</Label>
-                <RadioGroup value={categoryScope} onValueChange={setCategoryScope}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="current" id="current" />
-                    <Label htmlFor="current" className="font-normal cursor-pointer">
-                      Для текущей группы
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="all" />
-                    <Label htmlFor="all" className="font-normal cursor-pointer">
-                      Для всех групп
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-            
             <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
               <Label htmlFor="questions">Вопросы (разделяйте пустой строкой)</Label>
-              <div className="flex-1 overflow-y-auto">
-                <Textarea
-                  id="questions"
-                  placeholder={`Введите вопросы, разделяя их пустой строкой. Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nТвоя главная цель до конца года?`}
-                  value={questions}
-                  onChange={(e) => setQuestions(e.target.value)}
-                  className="min-h-[150px] h-full resize-none rounded-lg border-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
-                />
-              </div>
+              <Textarea
+                id="questions"
+                placeholder={`Введите вопросы, разделяя их пустой строкой. Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nТвоя главная цель до конца года?`}
+                value={questions}
+                onChange={(e) => setQuestions(e.target.value)}
+                className="flex-1 resize-none min-h-[200px] rounded-lg border-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
+              />
             </div>
             
-            <Button onClick={handleSave} className="w-full h-10">
+            <Button onClick={handleSave} className="w-full h-12">
               {editingCategory ? 'Сохранить' : 'Создать'}
             </Button>
           </div>
