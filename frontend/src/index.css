@@ -145,6 +145,22 @@
         }
     }
     
+    /* Gentle pulse for instruction icon */
+    .animate-pulse-gentle {
+        animation: pulseGentle 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulseGentle {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.85;
+            transform: scale(1.05);
+        }
+    }
+    
     /* Smooth transitions for interactive elements */
     .btn-smooth {
         transition: all var(--transition-smooth);

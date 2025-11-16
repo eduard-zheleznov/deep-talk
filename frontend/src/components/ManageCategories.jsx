@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from './ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
-import { Settings, Plus, Pencil, Trash2, Upload, X } from 'lucide-react';
+import { Settings, Plus, Pencil, Trash2, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import {
@@ -225,20 +225,15 @@ export const ManageCategories = ({ categories, onUpdate }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit/Create Dialog - fixed height with close button always visible */}
+      {/* Edit/Create Dialog - fixed positioning */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader className="relative">
+        <DialogContent className="max-w-2xl h-[90vh] flex flex-col">
+          <DialogHeader>
             <DialogTitle>
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
-            <DialogClose className="absolute right-0 top-0">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogClose>
           </DialogHeader>
-          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0 py-2">
             <div className="space-y-2">
               <Label htmlFor="categoryName">Название категории</Label>
               <Input
@@ -254,10 +249,10 @@ export const ManageCategories = ({ categories, onUpdate }) => {
               <Label htmlFor="questions">Вопросы (разделяйте пустой строкой)</Label>
               <Textarea
                 id="questions"
-                placeholder={`Введите вопросы, разделяя их пустой строкой. Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на уровень твоего счастья?\n\nКакая твоя главная цель до конца года?`}
+                placeholder={`Введите вопросы, разделяя их пустой строкой. Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nТвоя главная цель до конца года?`}
                 value={questions}
                 onChange={(e) => setQuestions(e.target.value)}
-                className="flex-1 resize-none min-h-[200px] rounded-lg border-2"
+                className="flex-1 resize-none min-h-[200px] rounded-lg border-2 focus:border-primary focus:ring-2 focus:ring-primary focus:ring-offset-0"
               />
             </div>
             
