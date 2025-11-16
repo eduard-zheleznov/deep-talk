@@ -11,7 +11,7 @@ import { InstructionsDialog } from '../components/InstructionsDialog';
 import { storage } from '../utils/storage';
 import { questionManager } from '../utils/questionManager';
 import { toast } from 'sonner';
-import { Users, Settings2 } from 'lucide-react';
+import { Users, CheckSquare } from 'lucide-react';
 
 export const MainPage = () => {
   const [groups, setGroups] = useState([]);
