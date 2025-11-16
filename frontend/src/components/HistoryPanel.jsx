@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui
 import { Button } from './ui/button';
 import { ScrollArea } from './ui/scroll-area';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
-import { History, Check, ArrowRight, RotateCcw } from 'lucide-react';
+import { History, Check, ArrowRight, RotateCcw, X } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
