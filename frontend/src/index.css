@@ -192,10 +192,10 @@
 @media (max-width: 640px) {
     [data-radix-dialog-content] {
         position: fixed;
-        top: 50%;
+        top: 0 !important;
         left: 50%;
-        transform: translate(-50%, -50%);
-        max-height: 85vh;
+        transform: translate(-50%, 0) !important;
+        max-height: 100vh;
         width: calc(100vw - 2rem);
     }
 }
@@ -230,4 +230,9 @@
         border-top-color: inherit;
         border-bottom-color: inherit;
     }
+}
+
+/* Remove hover effect from History icon */
+.history-icon-no-hover:hover {
+    background-color: transparent !important;
 }
