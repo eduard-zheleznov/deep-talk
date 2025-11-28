@@ -46,15 +46,24 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
   };
   
   const handleNextStep = () => {
-    if (!categoryName.trim()) {
-      toast.error('Введите название категории');
-      return;
+    if (step === 1) {
+      if (!categoryName.trim()) {
+        toast.error('Введите название категории');
+        return;
+      }
+      // Skip step 2 if editing (no scope selection needed)
+      setStep(editingCategory ? 2 : 2);
+    } else if (step === 2) {
+      setStep(3);
     }
-    setStep(2);
   };
   
   const handleBack = () => {
-    setStep(1);
+    if (step === 3) {
+      setStep(editingCategory ? 1 : 2);
+    } else if (step === 2) {
+      setStep(1);
+    }
   };
 
   const handleSave = () => {
