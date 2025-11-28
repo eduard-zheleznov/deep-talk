@@ -63,15 +63,15 @@ export const HistoryPanel = ({ categories, history, onResetHistory, onUnmarkQues
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
-        <SheetHeader className="text-center relative">
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute right-3 top-3 z-50 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-muted hover:bg-accent"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Закрыть</span>
+        </button>
+        <SheetHeader className="text-center">
           <SheetTitle className="text-center">История вопросов</SheetTitle>
-          <button
-            onClick={() => setOpen(false)}
-            className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
-          >
-            <X className="h-4 w-4" />
-            <span className="sr-only">Закрыть</span>
-          </button>
         </SheetHeader>
         
         <div className="mt-6 space-y-4">
