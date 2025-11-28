@@ -185,21 +185,21 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[100vh] sm:max-h-[85vh] flex flex-col">
-          <DialogHeader className="relative">
+          <button
+            onClick={() => setEditDialogOpen(false)}
+            className="absolute right-3 top-3 z-50 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-muted hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Закрыть</span>
+          </button>
+          <DialogHeader>
             <DialogTitle className="text-center">
               {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
             </DialogTitle>
-            <button
-              onClick={() => setEditDialogOpen(false)}
-              className="absolute right-0 top-0 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground bg-muted hover:bg-accent"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Закрыть</span>
-            </button>
           </DialogHeader>
           
           <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
-            {/* Step 1: Name and Scope */}
+            {/* Step 1: Name */}
             {step === 1 && (
               <div className="space-y-4 flex-1 flex flex-col">
                 <div className="space-y-2">
@@ -214,26 +214,6 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
                   />
                 </div>
                 
-                {!editingCategory && (
-                  <div className="space-y-3">
-                    <Label>Применить категорию</Label>
-                    <RadioGroup value={categoryScope} onValueChange={setCategoryScope} className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <RadioGroupItem value="current" id="current" className="w-5 h-5 border-2" />
-                        <Label htmlFor="current" className="font-normal cursor-pointer text-base">
-                          Для текущей группы
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <RadioGroupItem value="all" id="all" className="w-5 h-5 border-2" />
-                        <Label htmlFor="all" className="font-normal cursor-pointer text-base">
-                          Для всех групп
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                )}
-                
                 <div className="flex-1" />
                 
                 <Button onClick={handleNextStep} className="w-full h-12 text-base">
@@ -242,18 +222,52 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
               </div>
             )}
             
-            {/* Step 2: Questions */}
-            {step === 2 && (
+            {/* Step 2: Scope */}
+            {step === 2 && !editingCategory && (
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="space-y-3">
+                  <Label>Применить категорию</Label>
+                  <RadioGroup value={categoryScope} onValueChange={setCategoryScope} className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="current" id="current" className="w-5 h-5 border-2" />
+                      <Label htmlFor="current" className="font-normal cursor-pointer text-base">
+                        Для текущей группы
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <RadioGroupItem value="all" id="all" className="w-5 h-5 border-2" />
+                      <Label htmlFor="all" className="font-normal cursor-pointer text-base">
+                        Для всех групп
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+                
+                <div className="flex-1" />
+                
+                <div className="flex gap-3">
+                  <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
+                    Назад
+                  </Button>
+                  <Button onClick={handleNextStep} className="flex-1 h-12 text-base">
+                    Далее
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Step 3: Questions */}
+            {(step === 3 || (step === 2 && editingCategory)) && (
               <div className="space-y-3 flex-1 flex flex-col overflow-hidden min-h-0">
                 <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
                   <Label htmlFor="questions">Напишите вопросы (разделяя пустой строкой)</Label>
-                  <div className="flex-1 overflow-hidden min-h-[300px]">
+                  <div className="flex-1 overflow-hidden" style={{minHeight: '450px'}}>
                     <Textarea
                       id="questions"
                       placeholder="Например:&#10;&#10;Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?"
                       value={questions}
                       onChange={(e) => setQuestions(e.target.value)}
-                      className="min-h-full h-full resize-none rounded-2xl border-2 focus:border-primary focus:ring-0 focus:ring-offset-0 text-base"
+                      className="min-h-full h-full resize-none rounded-2xl border-0 focus:border-0 focus:ring-1 focus:ring-primary text-base bg-muted/30"
                       autoFocus
                     />
                   </div>
