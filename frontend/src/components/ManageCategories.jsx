@@ -203,13 +203,8 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <X className="h-4 w-4" />
             <span className="sr-only">Закрыть</span>
           </button>
-          <DialogHeader>
-            <DialogTitle className="text-center">
-              {editingCategory ? 'Редактировать категорию' : 'Создать категорию'}
-            </DialogTitle>
-          </DialogHeader>
           
-          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0 pt-4">
             {/* Step 1: Name */}
             {step === 1 && (
               <div className="space-y-4 flex-1 flex flex-col">
