@@ -138,13 +138,15 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <span className="sr-only">Закрыть</span>
           </button>
           <DialogHeader className="text-center">
-            <DialogTitle className="text-center">Управление категориями</DialogTitle>
+            <DialogTitle className="text-center leading-tight">
+              Управление категориями<br />и вопросами
+            </DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
             <Button onClick={handleCreate} className="gap-2">
               <Plus className="w-4 h-4" />
-              Создать категорию
+              Создать категорию и вопросы
             </Button>
             
             <div className="flex-1 overflow-y-auto pr-2 -mr-2">
