@@ -51,8 +51,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
         toast.error('Введите название категории');
         return;
       }
-      // Skip step 2 if editing (no scope selection needed)
-      setStep(editingCategory ? 2 : 2);
+      setStep(2);
     } else if (step === 2) {
       setStep(3);
     }
