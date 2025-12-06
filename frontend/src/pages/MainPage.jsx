@@ -110,6 +110,21 @@ export const MainPage = () => {
     storage.saveCategories(activeGroupId, updatedCategories);
   };
 
+  const handleUpdateCategoriesForAllGroups = (newCategory) => {
+    // Add the category to all groups
+    groups.forEach(group => {
+      const groupCategories = storage.getCategories(group.id);
+      const updatedCategories = [...groupCategories, newCategory];
+      storage.saveCategories(group.id, updatedCategories);
+    });
+    
+    // Update current group's categories in state
+    const currentCategories = storage.getCategories(activeGroupId);
+    setCategories(currentCategories);
+    
+    toast.success('Категория добавлена во все группы');
+  };
+
   const handleGetQuestion = () => {
     const question = questionManager.getRandomQuestion(categories, history);
     
