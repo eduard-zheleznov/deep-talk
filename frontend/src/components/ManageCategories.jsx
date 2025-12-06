@@ -264,28 +264,26 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             
             {/* Step 3: Questions */}
             {(step === 3 || (step === 2 && editingCategory)) && (
-              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <div className="space-y-2 flex-1 flex flex-col overflow-hidden min-h-0">
+              <div className="flex-1 flex flex-col overflow-y-auto pt-6">
+                <div className="space-y-3">
                   <Label htmlFor="questions">Напишите вопросы (разделяя пустой строкой)</Label>
-                  <div className="flex-1 overflow-hidden" style={{minHeight: '600px'}}>
-                    <Textarea
-                      id="questions"
-                      placeholder="Например:&#10;&#10;Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?"
-                      value={questions}
-                      onChange={(e) => setQuestions(e.target.value)}
-                      className="min-h-full h-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4"
-                      autoFocus
-                    />
+                  <Textarea
+                    id="questions"
+                    placeholder="Например:&#10;&#10;Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?&#10;&#10;Какая цель до конца этого года является для тебя самой главной?"
+                    value={questions}
+                    onChange={(e) => setQuestions(e.target.value)}
+                    style={{minHeight: '500px'}}
+                    className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4"
+                    autoFocus
+                  />
+                  <div className="flex gap-3">
+                    <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
+                      Назад
+                    </Button>
+                    <Button onClick={handleSave} className="flex-1 h-12 text-base">
+                      {editingCategory ? 'Сохранить' : 'Создать'}
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="flex gap-3 mt-4">
-                  <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
-                    Назад
-                  </Button>
-                  <Button onClick={handleSave} className="flex-1 h-12 text-base">
-                    {editingCategory ? 'Сохранить' : 'Создать'}
-                  </Button>
                 </div>
               </div>
             )}
