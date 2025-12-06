@@ -145,7 +145,7 @@
         }
     }
     
-    /* Gentle pulse for instruction icon - color pulse */
+    /* Gentle pulse for instruction icon - bright color pulse */
     .animate-pulse-gentle {
         animation: pulseGentle 2s ease-in-out infinite;
     }
@@ -156,8 +156,8 @@
             box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
         }
         50% {
-            background-color: hsl(var(--primary) / 0.15);
-            box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+            background-color: hsl(var(--primary) / 0.35);
+            box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
         }
     }
     
