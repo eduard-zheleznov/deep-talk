@@ -220,6 +220,9 @@ export const MainPage = () => {
             <ManageCategories
               categories={categories}
               onUpdate={handleUpdateCategories}
+              activeGroupId={activeGroupId}
+              allGroups={groups}
+              onUpdateForAllGroups={handleUpdateCategoriesForAllGroups}
             />
             <HistoryPanel
               categories={categories}
