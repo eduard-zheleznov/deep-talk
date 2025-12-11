@@ -264,25 +264,23 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             {/* Step 3: Questions */}
             {(step === 3 || (step === 2 && editingCategory)) && (
               <div className="flex flex-col pt-6 pb-4 px-6">
-                <div className="space-y-3">
-                  <Label htmlFor="questions">Напишите вопросы (разделяя пустой строкой)</Label>
-                  <Textarea
-                    id="questions"
-                    placeholder="Например:&#10;&#10;Прогресс в какой сфере жизни больше всего повлияет на твоё счастье?&#10;&#10;Какая цель до конца этого года является для тебя самой главной?"
-                    value={questions}
-                    onChange={(e) => setQuestions(e.target.value)}
-                    rows={10}
-                    className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4"
-                    autoFocus
-                  />
-                  <div className="flex gap-3 pt-1">
-                    <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
-                      Назад
-                    </Button>
-                    <Button onClick={handleSave} className="flex-1 h-12 text-base">
-                      {editingCategory ? 'Сохранить' : 'Создать'}
-                    </Button>
-                  </div>
+                <Label htmlFor="questions" className="mb-3">Разделяйте вопросы пустой строкой</Label>
+                <Textarea
+                  id="questions"
+                  placeholder={"Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nКакая цель до конца этого года является для тебя самой главной?"}
+                  value={questions}
+                  onChange={(e) => setQuestions(e.target.value)}
+                  rows={10}
+                  className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4 mb-3"
+                  autoFocus
+                />
+                <div className="flex gap-3">
+                  <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
+                    Назад
+                  </Button>
+                  <Button onClick={handleSave} className="flex-1 h-12 text-base">
+                    {editingCategory ? 'Сохранить' : 'Создать'}
+                  </Button>
                 </div>
               </div>
             )}
