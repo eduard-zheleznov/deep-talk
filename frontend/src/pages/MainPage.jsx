@@ -261,7 +261,7 @@ export const MainPage = () => {
           
           {/* Footer inline after content */}
           <div className="pt-8 text-center text-sm text-muted-foreground space-y-2">
-            <p>DeepTalk — глубокие разговоры начинаются здесь</p>
+            <p>Глубокие разговоры начинаются здесь</p>
             <div>
               <SupportDialog />
             </div>
