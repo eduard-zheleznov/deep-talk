@@ -128,7 +128,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <Settings className="w-5 h-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
           <button
             onClick={() => setOpen(false)}
             className="absolute right-3 top-3 z-50 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-muted hover:bg-accent"
@@ -136,21 +136,20 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <X className="h-4 w-4" />
             <span className="sr-only">Закрыть</span>
           </button>
-          <DialogHeader className="text-center">
+          <DialogHeader className="text-center px-6 pt-6 pb-2 flex-shrink-0">
             <DialogTitle className="text-center leading-tight">
               Управление категориями<br />и вопросами
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 flex-1 flex flex-col overflow-hidden">
-            <Button onClick={handleCreate} className="gap-2">
+          <div className="flex-1 flex flex-col overflow-hidden px-6 pb-6">
+            <Button onClick={handleCreate} className="gap-2 mb-4 flex-shrink-0">
               <Plus className="w-4 h-4" />
               Создать категорию и вопросы
             </Button>
             
-            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
-              <div className="space-y-2">
-                {categories.map((category) => (
+            <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
+              {categories.map((category) => (
                   <div
                     key={category.id}
                     className="flex items-center gap-2 p-4 rounded-lg border hover:bg-muted transition-colors"
