@@ -265,7 +265,7 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
                 <Label htmlFor="questions" className="mb-3">Разделяйте вопросы пустой строкой</Label>
                 <Textarea
                   id="questions"
-                  placeholder={"Например:\n\nПрогресс в какой сфере жизни больше всего повлияет на твоё счастье?\n\nКакая цель до конца этого года является для тебя самой главной?"}
+                  placeholder={"Например:\n\nПрогресс в какой сфере больше\nвсего увеличит твоё счастье?\n\nКакая цель до конца года для\nтебя самая главная?"}
                   value={questions}
                   onChange={(e) => setQuestions(e.target.value)}
                   rows={10}
