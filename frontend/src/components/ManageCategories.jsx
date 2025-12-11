@@ -180,7 +180,6 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
                     </Button>
                   </div>
                 ))}
-              </div>
             </div>
           </div>
         </DialogContent>
