@@ -122,6 +122,7 @@ const GroupsPage = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Создать новую группу</DialogTitle>
+                  <DialogDescription>Введите название для вашей новой группы</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateGroup} className="space-y-4 mt-4">
                   <Input
@@ -146,6 +147,7 @@ const GroupsPage = () => {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Присоединиться к группе</DialogTitle>
+                  <DialogDescription>Введите код приглашения, полученный от участника группы</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleJoinGroup} className="space-y-4 mt-4">
                   <Input
