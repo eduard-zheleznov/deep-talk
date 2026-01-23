@@ -261,24 +261,30 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             
             {/* Step 3: Questions */}
             {(step === 3 || (step === 2 && editingCategory)) && (
-              <div className="flex flex-col pt-6 pb-4 px-6">
-                <Label htmlFor="questions" className="mb-3">Разделяйте вопросы пустой строкой</Label>
-                <Textarea
-                  id="questions"
-                  placeholder={"Например:\n\nПрогресс в какой сфере больше\nвсего увеличит твоё счастье?\n\nКакая цель до конца года для\nтебя самая главная?"}
-                  value={questions}
-                  onChange={(e) => setQuestions(e.target.value)}
-                  rows={10}
-                  className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4 mb-3"
-                  autoFocus
-                />
-                <div className="flex gap-3">
-                  <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
-                    Назад
-                  </Button>
-                  <Button onClick={handleSave} className="flex-1 h-12 text-base">
-                    {editingCategory ? 'Сохранить' : 'Создать'}
-                  </Button>
+              <div className="flex flex-col h-full">
+                <div className="flex-shrink-0 pt-6 px-6">
+                  <Label htmlFor="questions" className="mb-3 block">Разделяйте вопросы пустой строкой</Label>
+                </div>
+                <div className="flex-1 px-6 overflow-y-auto">
+                  <Textarea
+                    id="questions"
+                    placeholder={"Например:\n\nПрогресс в какой сфере больше\nвсего увеличит твоё счастье?\n\nКакая цель до конца года для\nтебя самая главная?"}
+                    value={questions}
+                    onChange={(e) => setQuestions(e.target.value)}
+                    rows={8}
+                    className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex-shrink-0 px-6 pb-6 pt-4">
+                  <div className="flex gap-3">
+                    <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
+                      Назад
+                    </Button>
+                    <Button onClick={handleSave} className="flex-1 h-12 text-base">
+                      {editingCategory ? 'Сохранить' : 'Создать'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
