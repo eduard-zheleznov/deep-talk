@@ -157,6 +157,7 @@ const GroupDetailPage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Пригласить в группу</DialogTitle>
+            <DialogDescription>Поделитесь кодом с друзьями для присоединения к группе</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="text-center">
