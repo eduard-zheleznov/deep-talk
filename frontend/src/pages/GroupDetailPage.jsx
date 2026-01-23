@@ -61,7 +61,6 @@ const GroupDetailPage = () => {
         toast.info('Вопрос пропущен');
       }
       
-      // Load next question
       setTimeout(() => {
         loadNextQuestion();
       }, 500);
@@ -89,67 +88,63 @@ const GroupDetailPage = () => {
 
   if (loading && !question) {
     return (
-      <div className=\"min-h-screen flex items-center justify-center\">
-        <div className=\"text-center\">
-          <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4\"></div>
-          <p className=\"text-muted-foreground\">Загрузка вопроса...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Загрузка вопроса...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className=\"min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex flex-col\">
-      {/* Header */}
-      <header className=\"bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between sticky top-0 z-10\">
-        <div className=\"flex items-center gap-3\">
-          <Button variant=\"ghost\" size=\"icon\" onClick={() => navigate('/groups')}>
-            <ArrowLeft className=\"w-5 h-5\" />
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background flex flex-col">
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/groups')}>
+            <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className=\"font-semibold\">{group?.name || 'Группа'}</h1>
-            <p className=\"text-xs text-muted-foreground\">
+            <h1 className="font-semibold">{group?.name || 'Группа'}</h1>
+            <p className="text-xs text-muted-foreground">
               {stats && `${stats.answered}/${stats.total} отвечено`}
             </p>
           </div>
         </div>
-        <Button variant=\"ghost\" size=\"icon\" onClick={handleGenerateInvite}>
-          <Share2 className=\"w-5 h-5\" />
+        <Button variant="ghost" size="icon" onClick={handleGenerateInvite}>
+          <Share2 className="w-5 h-5" />
         </Button>
       </header>
 
-      {/* Main Content */}
-      <main className=\"flex-1 container mx-auto px-4 py-8 flex flex-col max-w-2xl\">
-        {/* Question Card */}
-        <div className=\"flex-1 flex items-center justify-center\">
+      <main className="flex-1 container mx-auto px-4 py-8 flex flex-col max-w-2xl">
+        <div className="flex-1 flex items-center justify-center">
           {question && (
-            <div className=\"w-full\">
-              <div className=\"bg-card rounded-2xl shadow-lg p-8 border border-border/50 mb-6\">
-                <div className=\"mb-4\">
-                  <span className=\"inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium\">
+            <div className="w-full">
+              <div className="bg-card rounded-2xl shadow-lg p-8 border border-border/50 mb-6">
+                <div className="mb-4">
+                  <span className="inline-block px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
                     {question.category}
                   </span>
                 </div>
-                <p className=\"text-xl md:text-2xl font-medium text-center leading-relaxed\">
+                <p className="text-xl md:text-2xl font-medium text-center leading-relaxed">
                   {question.text}
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className=\"space-y-3\">
+              <div className="space-y-3">
                 <Button
                   onClick={() => handleMarkQuestion('completed')}
-                  className=\"w-full h-14 text-lg\"
+                  className="w-full h-14 text-lg"
                 >
-                  <Check className=\"w-5 h-5 mr-2\" />
+                  <Check className="w-5 h-5 mr-2" />
                   Обсудили
                 </Button>
                 <Button
                   onClick={() => handleMarkQuestion('skipped')}
-                  variant=\"outline\"
-                  className=\"w-full h-14 text-lg\"
+                  variant="outline"
+                  className="w-full h-14 text-lg"
                 >
-                  <SkipForward className=\"w-5 h-5 mr-2\" />
+                  <SkipForward className="w-5 h-5 mr-2" />
                   Пропустить
                 </Button>
               </div>
@@ -158,23 +153,22 @@ const GroupDetailPage = () => {
         </div>
       </main>
 
-      {/* Invite Dialog */}
       <Dialog open={inviteDialog} onOpenChange={setInviteDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Пригласить в группу</DialogTitle>
           </DialogHeader>
-          <div className=\"space-y-4 mt-4\">
-            <div className=\"text-center\">
-              <p className=\"text-sm text-muted-foreground mb-2\">Код приглашения:</p>
-              <div className=\"bg-muted rounded-lg p-4 mb-4\">
-                <p className=\"text-3xl font-mono font-bold tracking-wider\">{inviteData?.invite_code}</p>
+          <div className="space-y-4 mt-4">
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">Код приглашения:</p>
+              <div className="bg-muted rounded-lg p-4 mb-4">
+                <p className="text-3xl font-mono font-bold tracking-wider">{inviteData?.invite_code}</p>
               </div>
-              <Button onClick={copyInviteCode} variant=\"outline\" className=\"w-full\">
+              <Button onClick={copyInviteCode} variant="outline" className="w-full">
                 Скопировать код
               </Button>
             </div>
-            <p className=\"text-xs text-center text-muted-foreground\">
+            <p className="text-xs text-center text-muted-foreground">
               Поделитесь этим кодом с друзьями, чтобы они могли присоединиться к группе
             </p>
           </div>
