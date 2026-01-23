@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { Button } from '../components/ui/button';
 import { ArrowLeft, Share2, SkipForward, Check } from 'lucide-react';
 import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 
 const GroupDetailPage = () => {
   const { groupId } = useParams();
