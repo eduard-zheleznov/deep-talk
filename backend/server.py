@@ -375,28 +375,32 @@ async def mark_question(
 @api_router.post("/admin/seed-questions")
 async def seed_questions():
     """Seed initial questions (admin only - remove in production)"""
+    from questions_seed import QUESTIONS_DATA
+    
     # Check if questions already exist
     existing_count = await questions_collection.count_documents({})
     if existing_count > 0:
         return {"message": f"Questions already seeded ({existing_count} questions)"}
     
-    # This will be populated with actual questions
-    # For now, just a placeholder
-    categories_questions = {
-        "Цели": [],
-        "Ценности": [],
-        "Прошлое": [],
-        "Мечты": [],
-        "Отношения": [],
-        "Внутренние состояния": [],
-        "Саморазвитие и рост": [],
-        "Препятствия и страхи": [],
-        "Вдохновение и творчество": [],
-        "Смысл жизни и философия": []
-    }
+    # Seed all questions
+    questions_to_insert = []
+    for category, questions in QUESTIONS_DATA.items():
+        for question_text in questions:
+            question_dict = {
+                "id": str(uuid.uuid4()),
+                "text": question_text,
+                "category": category
+            }
+            questions_to_insert.append(question_dict)
     
-    # Will populate this in next step
-    return {"message": "Seeding endpoint ready, questions to be added"}
+    if questions_to_insert:
+        await questions_collection.insert_many(questions_to_insert)
+    
+    return {
+        "message": f"Successfully seeded {len(questions_to_insert)} questions across {len(QUESTIONS_DATA)} categories",
+        "total_questions": len(questions_to_insert),
+        "categories": list(QUESTIONS_DATA.keys())
+    }
 
 # Include router in app
 app.include_router(api_router)
