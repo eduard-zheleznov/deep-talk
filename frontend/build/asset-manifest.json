@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/DeepTalk-staging/static/css/main.b7f9e7f6.css",
+    "main.js": "/DeepTalk-staging/static/js/main.e1cea7ee.js",
+    "index.html": "/DeepTalk-staging/index.html",
+    "main.b7f9e7f6.css.map": "/DeepTalk-staging/static/css/main.b7f9e7f6.css.map",
+    "main.e1cea7ee.js.map": "/DeepTalk-staging/static/js/main.e1cea7ee.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b7f9e7f6.css",
+    "static/js/main.e1cea7ee.js"
+  ]
+}
