@@ -91,6 +91,13 @@ class ApiClient {
     return this.request('/api/groups');
   }
 
+  async setGroupArchived(groupId, archived) {
+    return this.request(`/api/groups/${groupId}/archive`, {
+      method: 'PUT',
+      body: JSON.stringify({ archived }),
+    });
+  }
+
   async createInvite(groupId) {
     return this.request(`/api/groups/${groupId}/invite`, {
       method: 'POST',
@@ -100,6 +107,31 @@ class ApiClient {
   async joinGroup(inviteCode) {
     return this.request(`/api/groups/join/${inviteCode}`, {
       method: 'POST',
+    });
+  }
+
+  async updateMemberRole(groupId, memberId, role) {
+    return this.request(`/api/groups/${groupId}/members/${memberId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role }),
+    });
+  }
+
+  async getGroupQuestionConfig(groupId) {
+    return this.request(`/api/groups/${groupId}/question-config`);
+  }
+
+  async updateGroupQuestionCategories(groupId, categories) {
+    return this.request(`/api/groups/${groupId}/question-categories`, {
+      method: 'PUT',
+      body: JSON.stringify({ categories }),
+    });
+  }
+
+  async updateGroupQuestionHistory(groupId, history) {
+    return this.request(`/api/groups/${groupId}/question-history`, {
+      method: 'PUT',
+      body: JSON.stringify({ history }),
     });
   }
 

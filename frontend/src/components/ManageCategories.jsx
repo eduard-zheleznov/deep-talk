@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
-import { Settings, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Settings, Plus, Pencil, Trash2, X, Layers3 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -17,105 +17,130 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from './ui/alert-dialog';
+import {
+  formatRuCount,
+  getSetStats,
+  normalizeQuestionSet,
+  normalizeQuestionSets,
+  parseQuestionSetText,
+  questionSetToText,
+} from '../utils/questionSets';
 
-export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroups, onUpdateForAllGroups }) => {
-  const [open, setOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState(null);
+const EXAMPLE_TEXT = `Что ты любил делать в детстве?
+Какой семейный момент ты чаще всего вспоминаешь?
+
+## Детство
+Каким ты был в школе?
+Что тебе особенно нравилось дома?
+
+## Семейные традиции
+Какая традиция была для тебя важной?`;
+
+export const ManageCategories = ({
+  categories,
+  onUpdate,
+  onUpdateForAllGroups,
+  open: controlledOpen,
+  onOpenChange,
+  trigger,
+}) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const [editingSet, setEditingSet] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [categoryName, setCategoryName] = useState('');
-  const [questions, setQuestions] = useState('');
-  const [categoryScope, setCategoryScope] = useState('current'); // 'current' or 'all'
-  const [step, setStep] = useState(1); // Step 1: name and scope, Step 2: questions
+  const [setName, setSetName] = useState('');
+  const [questionText, setQuestionText] = useState('');
+  const [setScope, setSetScope] = useState('current');
+  const [step, setStep] = useState(1);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
-  const handleEdit = (category) => {
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setQuestions(category.questions.join('\n\n'));
+  const questionSets = useMemo(() => normalizeQuestionSets(categories), [categories]);
+  const parsedPreview = useMemo(() => parseQuestionSetText(questionText, setName, editingSet), [questionText, setName, editingSet]);
+  const previewStats = useMemo(() => getSetStats(parsedPreview), [parsedPreview]);
+
+  const handleEdit = (questionSet) => {
+    const normalizedSet = normalizeQuestionSet(questionSet);
+    setEditingSet(normalizedSet);
+    setSetName(normalizedSet.name);
+    setQuestionText(questionSetToText(normalizedSet));
+    setSetScope('current');
     setStep(1);
     setEditDialogOpen(true);
   };
 
   const handleCreate = () => {
-    setEditingCategory(null);
-    setCategoryName('');
-    setQuestions('');
-    setCategoryScope('current');
+    setEditingSet(null);
+    setSetName('');
+    setQuestionText('');
+    setSetScope('current');
     setStep(1);
     setEditDialogOpen(true);
   };
   
   const handleNextStep = () => {
     if (step === 1) {
-      if (!categoryName.trim()) {
-        toast.error('Введите название категории');
+      if (!setName.trim()) {
+        toast.error('Введите название набора');
         return;
       }
-      setStep(2);
-    } else if (step === 2) {
+      setStep(editingSet ? 3 : 2);
+      return;
+    }
+
+    if (step === 2) {
       setStep(3);
     }
   };
   
   const handleBack = () => {
     if (step === 3) {
-      setStep(editingCategory ? 1 : 2);
-    } else if (step === 2) {
+      setStep(editingSet ? 1 : 2);
+      return;
+    }
+
+    if (step === 2) {
       setStep(1);
     }
   };
 
   const handleSave = () => {
-    if (!categoryName.trim()) {
-      toast.error('Введите название категории');
+    if (!setName.trim()) {
+      toast.error('Введите название набора');
       return;
     }
 
-    const questionList = questions
-      .split(/\n\n+/)
-      .map(q => q.trim())
-      .filter(q => q);
+    const newSet = parseQuestionSetText(questionText, setName.trim(), editingSet);
 
-    if (questionList.length === 0) {
+    if (newSet.subcategories.length === 0) {
       toast.error('Добавьте хотя бы один вопрос');
       return;
     }
 
-    const newCategory = {
-      id: editingCategory ? editingCategory.id : `custom_${Date.now()}`,
-      name: categoryName.trim(),
-      enabled: true,
-      questions: questionList,
-    };
-
-    if (editingCategory) {
-      const updated = categories.map(cat =>
-        cat.id === editingCategory.id ? newCategory : cat
-      );
+    if (editingSet) {
+      const updated = questionSets.map((questionSet) => (
+        questionSet.id === editingSet.id ? newSet : questionSet
+      ));
       onUpdate(updated);
-      toast.success('Категория обновлена');
+      toast.success('Набор обновлён');
+    } else if (setScope === 'all') {
+      onUpdateForAllGroups(newSet);
+      toast.success('Набор создан для всех разговоров');
     } else {
-      if (categoryScope === 'all') {
-        // Apply to all groups
-        onUpdateForAllGroups(newCategory);
-        toast.success('Категория создана для всех групп');
-      } else {
-        // Apply only to current group
-        onUpdate([...categories, newCategory]);
-        toast.success('Категория создана');
-      }
+      onUpdate([...questionSets, newSet]);
+      toast.success('Набор создан');
     }
 
     setEditDialogOpen(false);
-    setCategoryName('');
-    setQuestions('');
+    setSetName('');
+    setQuestionText('');
   };
 
   const handleDelete = () => {
     if (deleteConfirm) {
-      const updated = categories.filter(cat => cat.id !== deleteConfirm.id);
+      const updated = questionSets.filter((questionSet) => questionSet.id !== deleteConfirm.id);
       onUpdate(updated);
-      toast.success('Категория удалена');
+      toast.success('Набор удалён');
       setDeleteConfirm(null);
     }
   };
@@ -123,12 +148,16 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Settings className="w-5 h-5" />
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-0">
+        {trigger !== null && (
+          <DialogTrigger asChild>
+            {trigger || (
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Settings className="w-5 h-5" />
+              </Button>
+            )}
+          </DialogTrigger>
+        )}
+        <DialogContent className="max-w-2xl max-h-[92dvh] flex flex-col p-0 overflow-hidden">
           <button
             onClick={() => setOpen(false)}
             className="absolute right-3 top-3 z-50 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-muted hover:bg-accent"
@@ -136,63 +165,96 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <X className="h-4 w-4" />
             <span className="sr-only">Закрыть</span>
           </button>
-          <DialogHeader className="text-center px-6 pt-6 pb-2 flex-shrink-0">
+
+          <DialogHeader className="px-6 pt-6 pb-3 text-center">
             <DialogTitle className="text-center leading-tight">
-              Управление категориями<br />и вопросами
+              Настройки наборов{' '}
+              <br aria-hidden="true" />
+              и вопросов
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 flex flex-col overflow-hidden px-6 pb-6">
-            <Button onClick={handleCreate} className="gap-2 mb-4 flex-shrink-0">
+          <div className="flex min-h-0 flex-1 flex-col px-6 pb-6">
+            <Button onClick={handleCreate} className="gap-2 mb-4 h-11 flex-shrink-0">
               <Plus className="w-4 h-4" />
-              Создать категорию и вопросы
+              Создать набор вопросов
             </Button>
             
-            <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-              {categories.map((category) => (
-                  <div
-                    key={category.id}
-                    className="flex items-center gap-2 p-4 rounded-lg border hover:bg-muted transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">{category.name}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {category.questions.length} вопросов
-                      </p>
+            <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2 -mr-2">
+              {questionSets.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  Наборы вопросов пока не созданы.
+                </div>
+              ) : (
+                questionSets.map((questionSet) => {
+                  const stats = getSetStats(questionSet);
+                  const visibleSubcategories = questionSet.subcategories.slice(0, 3);
+                  const hiddenCount = Math.max(0, questionSet.subcategories.length - visibleSubcategories.length);
+
+                  return (
+                    <div
+                      key={questionSet.id}
+                      className="rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-muted/30"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <Layers3 className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="break-words font-medium leading-tight">{questionSet.name}</h4>
+                          <p className="text-sm text-muted-foreground">
+                            {formatRuCount(stats.subcategories, ['раздел', 'раздела', 'разделов'])} · {formatRuCount(stats.totalQuestions, ['вопрос', 'вопроса', 'вопросов'])}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {visibleSubcategories.map((subcategory) => (
+                              <span
+                                key={subcategory.id}
+                                className="max-w-full rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground"
+                              >
+                                {subcategory.name}
+                              </span>
+                            ))}
+                            {hiddenCount > 0 && (
+                              <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                                ещё {hiddenCount}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-shrink-0 items-center gap-1">
+                          <Button
+                            onClick={() => handleEdit(questionSet)}
+                            variant="ghost"
+                            size="icon"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          
+                          <Button
+                            onClick={() => setDeleteConfirm(questionSet)}
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <Button
-                      onClick={() => handleEdit(category)}
-                      variant="ghost"
-                      size="icon"
-                      className="flex-shrink-0"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    
-                    <Button
-                      onClick={() => setDeleteConfirm(category)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive flex-shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })
+              )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Edit/Create Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={(isOpen) => {
         setEditDialogOpen(isOpen);
-        if (!isOpen) {
-          setStep(1);
-        }
+        if (!isOpen) setStep(1);
       }}>
-        <DialogContent className="max-w-2xl max-h-[100vh] sm:max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[92dvh] flex flex-col p-0 overflow-hidden">
           <button
             onClick={() => setEditDialogOpen(false)}
             className="absolute right-3 top-3 z-50 rounded-full p-2 opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none bg-muted hover:bg-accent"
@@ -201,18 +263,17 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
             <span className="sr-only">Закрыть</span>
           </button>
           
-          <div className="space-y-4 flex-1 flex flex-col overflow-hidden min-h-0 pt-4">
-            {/* Step 1: Name */}
+          <div className="flex min-h-0 flex-1 flex-col p-6 pt-10">
             {step === 1 && (
-              <div className="space-y-4 flex-1 flex flex-col">
+              <div className="flex min-h-0 flex-1 flex-col space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="categoryName">Напишите название категории</Label>
+                  <Label htmlFor="setName">Название набора</Label>
                   <Input
-                    id="categoryName"
-                    placeholder="Например: Мечты и цели"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    className="h-12 text-base rounded-lg border-2 focus:border-primary focus:ring-0 focus:ring-offset-0"
+                    id="setName"
+                    placeholder="Например: Разговор с родителями"
+                    value={setName}
+                    onChange={(event) => setSetName(event.target.value)}
+                    className="h-12 rounded-lg border-2 text-base focus:border-primary focus:ring-0 focus:ring-offset-0"
                     autoFocus
                   />
                 </div>
@@ -225,22 +286,21 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
               </div>
             )}
             
-            {/* Step 2: Scope */}
-            {step === 2 && !editingCategory && (
-              <div className="space-y-4 flex-1 flex flex-col">
+            {step === 2 && !editingSet && (
+              <div className="flex min-h-0 flex-1 flex-col space-y-4">
                 <div className="space-y-3">
-                  <Label>Применить категорию</Label>
-                  <RadioGroup value={categoryScope} onValueChange={setCategoryScope} className="space-y-3">
+                  <Label>Применить набор</Label>
+                  <RadioGroup value={setScope} onValueChange={setSetScope} className="space-y-3">
                     <div className="flex items-center space-x-3">
-                      <RadioGroupItem value="current" id="current" className="w-5 h-5 border-2" />
-                      <Label htmlFor="current" className="font-normal cursor-pointer text-base">
-                        Для текущей группы
+                      <RadioGroupItem value="current" id="current-set" className="w-5 h-5 border-2" />
+                      <Label htmlFor="current-set" className="cursor-pointer text-base font-normal">
+                        Для текущего разговора
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <RadioGroupItem value="all" id="all" className="w-5 h-5 border-2" />
-                      <Label htmlFor="all" className="font-normal cursor-pointer text-base">
-                        Для всех групп
+                      <RadioGroupItem value="all" id="all-sets" className="w-5 h-5 border-2" />
+                      <Label htmlFor="all-sets" className="cursor-pointer text-base font-normal">
+                        Для всех разговоров
                       </Label>
                     </div>
                   </RadioGroup>
@@ -259,30 +319,38 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
               </div>
             )}
             
-            {/* Step 3: Questions */}
-            {(step === 3 || (step === 2 && editingCategory)) && (
-              <div className="flex flex-col h-full">
-                <div className="flex-shrink-0 pt-6 px-6">
-                  <Label htmlFor="questions" className="mb-3 block">Разделяйте вопросы пустой строкой</Label>
+            {step === 3 && (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex-shrink-0 space-y-2">
+                  <Label htmlFor="questionText">Вопросы набора</Label>
+                  <div className="rounded-lg bg-muted px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                    Без заголовков вопросы попадут в раздел «Общие вопросы». Для разделов используйте строки вида «## Детство».
+                  </div>
                 </div>
-                <div className="flex-1 px-6 overflow-y-auto">
+
+                <div className="min-h-0 flex-1 py-4">
                   <Textarea
-                    id="questions"
-                    placeholder={"Например:\n\nПрогресс в какой сфере больше\nвсего увеличит твоё счастье?\n\nКакая цель до конца года для\nтебя самая главная?"}
-                    value={questions}
-                    onChange={(e) => setQuestions(e.target.value)}
-                    rows={8}
-                    className="w-full resize-none rounded-xl border border-border/50 focus:border-primary focus:ring-0 focus:outline-none text-base bg-background p-4"
+                    id="questionText"
+                    placeholder={EXAMPLE_TEXT}
+                    value={questionText}
+                    onChange={(event) => setQuestionText(event.target.value)}
+                    rows={10}
+                    className="h-full min-h-[280px] w-full resize-none rounded-xl border border-border/60 bg-background p-4 text-base focus:border-primary focus:outline-none focus:ring-0"
                     autoFocus
                   />
                 </div>
-                <div className="flex-shrink-0 px-6 pb-6 pt-4">
+
+                <div className="flex-shrink-0 space-y-3">
+                  <div className="rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+                    {formatRuCount(previewStats.subcategories, ['раздел', 'раздела', 'разделов'])} · {formatRuCount(previewStats.totalQuestions, ['вопрос', 'вопроса', 'вопросов'])}
+                  </div>
+
                   <div className="flex gap-3">
                     <Button onClick={handleBack} variant="outline" className="flex-1 h-12 text-base">
                       Назад
                     </Button>
                     <Button onClick={handleSave} className="flex-1 h-12 text-base">
-                      {editingCategory ? 'Сохранить' : 'Создать'}
+                      {editingSet ? 'Сохранить' : 'Создать'}
                     </Button>
                   </div>
                 </div>
@@ -292,13 +360,12 @@ export const ManageCategories = ({ categories, onUpdate, activeGroupId, allGroup
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить категорию?</AlertDialogTitle>
+            <AlertDialogTitle>Удалить набор?</AlertDialogTitle>
             <AlertDialogDescription>
-              Категория "{deleteConfirm?.name}" и все её вопросы будут удалены.
+              Набор "{deleteConfirm?.name}" и все его вопросы будут удалены.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

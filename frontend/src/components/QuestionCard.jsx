@@ -7,7 +7,7 @@ export const QuestionCard = ({ question, onMarkUsed, onNext, className = '' }) =
   if (!question) {
     return (
       <Card className={`p-8 text-center ${className}`}>
-        <p className="text-muted-foreground">Нет доступных вопросов. Выберите категории или сбросьте историю.</p>
+        <p className="text-muted-foreground">Нет доступных вопросов. Выберите наборы или сбросьте историю.</p>
       </Card>
     );
   }
@@ -16,9 +16,16 @@ export const QuestionCard = ({ question, onMarkUsed, onNext, className = '' }) =
     <Card className={`p-8 md:p-12 question-enter ${className}`} style={{ boxShadow: 'var(--shadow-medium)' }}>
       <div className="space-y-6">
         <div className="text-center space-y-4">
-          <span className="inline-block px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
-            {question.categoryName}
-          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {question.questionSetName && (
+              <span className="inline-block max-w-full truncate rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {question.questionSetName}
+              </span>
+            )}
+            <span className="inline-block max-w-full truncate rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
+              {question.subcategoryName || question.categoryName}
+            </span>
+          </div>
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-medium leading-snug text-balance">
             {question.text}
           </h2>

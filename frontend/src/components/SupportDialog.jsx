@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { MessageCircle, Phone, Mail, X } from 'lucide-react';
 
-export const SupportDialog = () => {
-  const [open, setOpen] = useState(false);
+export const SupportDialog = ({ open: controlledOpen, onOpenChange, trigger }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const socialLinks = [
     {
@@ -46,11 +48,15 @@ export const SupportDialog = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="text-sm text-muted-foreground hover:text-foreground underline transition-colors">
-          Поддержка
-        </button>
-      </DialogTrigger>
+      {trigger !== null && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <button className="text-sm text-muted-foreground hover:text-foreground underline transition-colors">
+              Поддержка
+            </button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-md">
           <button
             onClick={() => setOpen(false)}

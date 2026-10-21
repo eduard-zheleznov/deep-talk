@@ -1,35 +1,53 @@
+import {
+  getQuestionId,
+  normalizeQuestionSets,
+  parseQuestionSetText,
+} from './questionSets';
+
 // Question management logic
 
 export const questionManager = {
-  // Get available questions based on selected categories and history
-  getAvailableQuestions(categories, history) {
+  // Get available questions based on selected sets, subcategories and history
+  getAvailableQuestions(questionSets, history) {
     const availableQuestions = [];
-    
-    categories.forEach(category => {
-      if (category.enabled && category.questions) {
-        category.questions.forEach((question, index) => {
-          const questionId = `${category.id}_${index}`;
+
+    normalizeQuestionSets(questionSets).forEach((questionSet) => {
+      if (questionSet.enabled === false) return;
+
+      questionSet.subcategories.forEach((subcategory) => {
+        if (subcategory.enabled === false || !subcategory.questions) return;
+
+        const disabledQuestions = subcategory.disabledQuestions || [];
+
+        subcategory.questions.forEach((question, index) => {
+          const questionId = getQuestionId(subcategory, index);
           
           // Only include if not marked as used
-          if (!history.used.includes(questionId)) {
+          if (!history.used.includes(questionId) && !disabledQuestions.includes(index)) {
             availableQuestions.push({
               id: questionId,
               text: question,
-              categoryId: category.id,
-              categoryName: category.name,
+              setId: questionSet.id,
+              questionSetId: questionSet.id,
+              questionSetName: questionSet.name,
+              categoryId: subcategory.id,
+              subcategoryId: subcategory.id,
+              categoryName: subcategory.name,
+              subcategoryName: subcategory.name,
+              serverQuestionId: subcategory.questionIds?.[index],
               index,
             });
           }
         });
-      }
+      });
     });
     
     return availableQuestions;
   },
 
   // Get a random question from available questions
-  getRandomQuestion(categories, history) {
-    const available = this.getAvailableQuestions(categories, history);
+  getRandomQuestion(questionSets, history) {
+    const available = this.getAvailableQuestions(questionSets, history);
     
     if (available.length === 0) {
       return null;
@@ -92,13 +110,25 @@ export const questionManager = {
       }
     });
     
-    // Convert to category format
-    return Object.keys(categories).map((name, index) => ({
+    const subcategories = Object.keys(categories).map((name, index) => ({
       id: `custom_${index}_${Date.now()}`,
       name,
       enabled: true,
       questions: categories[name],
+      disabledQuestions: [],
     }));
+
+    return [{
+      id: `set_custom_${Date.now()}`,
+      type: 'question_set',
+      name: 'Импортированный набор',
+      enabled: true,
+      subcategories,
+    }];
+  },
+
+  parseQuestionSetData(text, fallbackName, previousSet) {
+    return parseQuestionSetText(text, fallbackName, previousSet);
   },
 };
 

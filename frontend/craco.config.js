@@ -81,7 +81,7 @@ if (config.enableVisualEdits) {
 }
 
 // Setup dev server with visual edits and/or health check
-if (config.enableVisualEdits || config.enableHealthCheck) {
+if (config.enableVisualEdits || config.enableHealthCheck || process.env.DEV_API_PROXY_TARGET) {
   webpackConfig.devServer = (devServerConfig) => {
     // Apply visual edits dev server setup if enabled
     if (config.enableVisualEdits && setupDevServer) {
@@ -102,6 +102,17 @@ if (config.enableVisualEdits || config.enableHealthCheck) {
         setupHealthEndpoints(devServer, healthPluginInstance);
 
         return middlewares;
+      };
+    }
+
+    if (process.env.DEV_API_PROXY_TARGET) {
+      devServerConfig.proxy = {
+        ...(devServerConfig.proxy || {}),
+        '/DeepTalk/api': {
+          target: process.env.DEV_API_PROXY_TARGET,
+          changeOrigin: true,
+          secure: true,
+        },
       };
     }
 

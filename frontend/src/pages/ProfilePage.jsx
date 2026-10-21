@@ -5,7 +5,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { ArrowLeft } from 'lucide-react';
+import { AppHeader } from '../components/AppHeader';
+import { BottomNav } from '../components/BottomNav';
 import { toast } from 'sonner';
 
 const ProfilePage = () => {
@@ -16,8 +17,12 @@ const ProfilePage = () => {
     age: user?.age || '',
     gender: user?.gender || '',
     phone: user?.phone || '',
+    max_messenger: user?.max_messenger || '',
     telegram: user?.telegram || '',
     whatsapp: user?.whatsapp || '',
+    instagram: user?.instagram || '',
+    facebook: user?.facebook || '',
+    vk: user?.vk || '',
     about_me: user?.about_me || '',
   });
   const [loading, setLoading] = useState(false);
@@ -31,9 +36,10 @@ const ProfilePage = () => {
     setLoading(true);
 
     try {
-      // Convert age to number if not empty
       const dataToUpdate = { ...formData };
-      if (dataToUpdate.age) {
+      if (dataToUpdate.age === '') {
+        dataToUpdate.age = null;
+      } else if (dataToUpdate.age) {
         dataToUpdate.age = parseInt(dataToUpdate.age);
       }
       
@@ -47,18 +53,12 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 px-4 py-3">
-        <div className="container mx-auto max-w-2xl flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/groups')}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-semibold">Мой профиль</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background pb-24">
+      <AppHeader onTitleClick={() => navigate('/groups')} />
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border/50">
+      <main className="container mx-auto px-4 py-5 sm:py-8 max-w-2xl">
+        <h1 className="mb-5 text-2xl font-bold tracking-tight">Мой профиль</h1>
+        <div className="bg-card rounded-xl shadow-lg p-5 sm:p-6 border border-border/50">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Имя</Label>
@@ -68,11 +68,12 @@ const ProfilePage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Ваше имя"
+                autoComplete="name"
                 className="h-12"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <Label htmlFor="age">Возраст</Label>
                 <Input
@@ -82,20 +83,25 @@ const ProfilePage = () => {
                   value={formData.age}
                   onChange={handleChange}
                   placeholder="25"
+                  autoComplete="off"
                   className="h-12"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="gender">Пол</Label>
-                <Input
+                <select
                   id="gender"
                   name="gender"
                   value={formData.gender}
                   onChange={handleChange}
-                  placeholder="Мужской/Женский"
-                  className="h-12"
-                />
+                  autoComplete="sex"
+                  className="flex h-12 w-full rounded-md border border-input bg-background px-3 py-2 text-base shadow-sm ring-offset-background focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">Не указывать</option>
+                  <option value="Мужской">Мужской</option>
+                  <option value="Женский">Женский</option>
+                </select>
               </div>
             </div>
 
@@ -108,6 +114,20 @@ const ProfilePage = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+7 (999) 123-45-67"
+                autoComplete="tel"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="max_messenger">Max</Label>
+              <Input
+                id="max_messenger"
+                name="max_messenger"
+                value={formData.max_messenger}
+                onChange={handleChange}
+                placeholder="Ссылка-приглашение Max"
+                autoComplete="off"
                 className="h-12"
               />
             </div>
@@ -120,6 +140,7 @@ const ProfilePage = () => {
                 value={formData.telegram}
                 onChange={handleChange}
                 placeholder="@username"
+                autoComplete="off"
                 className="h-12"
               />
             </div>
@@ -133,6 +154,46 @@ const ProfilePage = () => {
                 value={formData.whatsapp}
                 onChange={handleChange}
                 placeholder="+7 (999) 123-45-67"
+                autoComplete="tel"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instagram">Instagram</Label>
+              <Input
+                id="instagram"
+                name="instagram"
+                value={formData.instagram}
+                onChange={handleChange}
+                placeholder="@username или ссылка"
+                autoComplete="off"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="facebook">Facebook</Label>
+              <Input
+                id="facebook"
+                name="facebook"
+                value={formData.facebook}
+                onChange={handleChange}
+                placeholder="Профиль или ссылка"
+                autoComplete="off"
+                className="h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="vk">ВК</Label>
+              <Input
+                id="vk"
+                name="vk"
+                value={formData.vk}
+                onChange={handleChange}
+                placeholder="Профиль или ссылка"
+                autoComplete="off"
                 className="h-12"
               />
             </div>
@@ -158,6 +219,7 @@ const ProfilePage = () => {
           </form>
         </div>
       </main>
+      <BottomNav />
     </div>
   );
 };

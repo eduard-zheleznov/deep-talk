@@ -1,8 +1,10 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, UploadFile, File, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
+from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import AutoReconnect, NetworkTimeout, ServerSelectionTimeoutError
 import os
 import logging
 from pathlib import Path
@@ -11,10 +13,12 @@ import uuid
 from datetime import datetime, timezone, timedelta
 import secrets
 import string
+import hashlib
 
 from models import (
     UserCreate, UserLogin, UserResponse, UserUpdate, UserInDB,
-    GroupCreate, GroupResponse, GroupInDB,
+    GroupCreate, GroupResponse, GroupInDB, GroupRole, GroupRoleUpdate, GroupArchiveUpdate,
+    GroupQuestionConfig, GroupQuestionCategoriesUpdate, GroupQuestionHistoryUpdate,
     QuestionResponse, QuestionInDB, QuestionStatus,
     UserQuestionProgress, NextQuestionResponse,
     Token
@@ -28,7 +32,8 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+mongo_timeout_ms = int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "3000"))
+client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=mongo_timeout_ms)
 db = client[os.environ['DB_NAME']]
 
 # Collections
@@ -38,8 +43,25 @@ questions_collection = db.questions
 user_questions_collection = db.user_questions
 invites_collection = db.group_invites
 
+APP_BASE_PATH = os.getenv("APP_BASE_PATH", "/DeepTalk").strip() or "/DeepTalk"
+if not APP_BASE_PATH.startswith("/"):
+    APP_BASE_PATH = f"/{APP_BASE_PATH}"
+APP_BASE_PATH = APP_BASE_PATH.rstrip("/")
+PUBLIC_APP_URL = os.getenv("PUBLIC_APP_URL", "").rstrip("/")
+
 # Create the main app
 app = FastAPI()
+
+
+@app.exception_handler(ServerSelectionTimeoutError)
+@app.exception_handler(NetworkTimeout)
+@app.exception_handler(AutoReconnect)
+async def database_unavailable_handler(request: Request, exc: Exception):
+    logging.exception("MongoDB is unavailable while handling %s", request.url.path)
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "Сервис временно недоступен. Попробуйте ещё раз через несколько секунд."},
+    )
 
 # Security
 security = HTTPBearer()
@@ -82,6 +104,123 @@ def generate_invite_code(length: int = 8) -> str:
     """Generate a random invite code"""
     characters = string.ascii_uppercase + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
+
+def normalize_member_roles(group: dict) -> dict:
+    """Backfill and validate member roles for old and new group documents."""
+    member_ids = list(dict.fromkeys(group.get("member_ids", [])))
+    raw_roles = group.get("member_roles") or {}
+    valid_roles = {role.value for role in GroupRole}
+    normalized = {}
+
+    for member_id in member_ids:
+        raw_role = raw_roles.get(member_id)
+        if raw_role in valid_roles:
+            normalized[member_id] = raw_role
+        elif member_id == group.get("creator_id"):
+            normalized[member_id] = GroupRole.HOST.value
+        else:
+            normalized[member_id] = GroupRole.PARTICIPANT.value
+
+    creator_id = group.get("creator_id")
+    if creator_id in normalized and GroupRole.HOST.value not in normalized.values():
+        normalized[creator_id] = GroupRole.HOST.value
+
+    return normalized
+
+async def ensure_group_roles(group: dict) -> dict:
+    """Persist normalized roles when a group was created before roles existed."""
+    normalized_roles = normalize_member_roles(group)
+    if group.get("member_roles") != normalized_roles:
+        await groups_collection.update_one(
+            {"id": group["id"]},
+            {"$set": {"member_roles": normalized_roles}}
+        )
+        group["member_roles"] = normalized_roles
+    return group
+
+async def build_group_response(group: dict, current_user: UserInDB) -> GroupResponse:
+    group = await ensure_group_roles(group)
+    member_ids = group.get("member_ids", [])
+    members_cursor = users_collection.find({"id": {"$in": member_ids}})
+    members = await members_cursor.to_list(100)
+
+    return GroupResponse(
+        **group,
+        current_user_role=group["member_roles"].get(current_user.id),
+        members=[UserResponse(**member) for member in members],
+        is_archived=current_user.id in group.get("archived_by", []),
+    )
+
+def build_invite_url(invite_code: str) -> str:
+    invite_path = f"{APP_BASE_PATH}/join/{invite_code}"
+    if PUBLIC_APP_URL:
+        return f"{PUBLIC_APP_URL}/join/{invite_code}"
+    return invite_path
+
+def build_default_question_categories(questions: List[dict]) -> List[dict]:
+    grouped_questions = {}
+    category_order = []
+
+    for question in questions:
+        category_name = question["category"]
+        if category_name not in grouped_questions:
+            grouped_questions[category_name] = []
+            category_order.append(category_name)
+        grouped_questions[category_name].append(question)
+
+    categories = []
+    for category_name in category_order:
+        category_id = "category_" + hashlib.sha1(category_name.encode("utf-8")).hexdigest()[:10]
+        category_questions = grouped_questions[category_name]
+        categories.append({
+            "id": category_id,
+            "name": category_name,
+            "enabled": True,
+            "questions": [question["text"] for question in category_questions],
+            "questionIds": [question["id"] for question in category_questions],
+            "disabledQuestions": [],
+        })
+
+    return [{
+        "id": "set_base_1",
+        "type": "question_set",
+        "name": "Базовый набор № 1",
+        "enabled": True,
+        "subcategories": categories,
+    }]
+
+def normalize_question_history(history: Optional[dict]) -> dict:
+    if not history:
+        return {"used": [], "skipped": []}
+    return {
+        "used": list(history.get("used", [])),
+        "skipped": list(history.get("skipped", [])),
+    }
+
+async def get_group_for_member(group_id: str, current_user: UserInDB) -> dict:
+    group = await groups_collection.find_one({"id": group_id})
+    if not group or current_user.id not in group.get("member_ids", []):
+        raise HTTPException(status_code=403, detail="Not a member of this group")
+    return await ensure_group_roles(group)
+
+async def get_group_question_config_data(group: dict) -> dict:
+    categories = group.get("question_categories")
+    history = normalize_question_history(group.get("question_history"))
+    updates = {}
+
+    if categories is None:
+        all_questions = await questions_collection.find({}).to_list(1000)
+        categories = build_default_question_categories(all_questions)
+        updates["question_categories"] = categories
+
+    if group.get("question_history") != history:
+        updates["question_history"] = history
+
+    if updates:
+        await groups_collection.update_one({"id": group["id"]}, {"$set": updates})
+        group.update(updates)
+
+    return {"categories": categories, "history": history}
 
 # ==================== AUTH ENDPOINTS ====================
 
@@ -165,14 +304,14 @@ async def create_group(
         "name": group_data.name,
         "creator_id": current_user.id,
         "member_ids": [current_user.id],
+        "member_roles": {current_user.id: GroupRole.HOST.value},
+        "archived_by": [],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
     await groups_collection.insert_one(group_dict)
     
-    # Get creator info for response
-    group_response = GroupResponse(**group_dict, members=[UserResponse(**current_user.model_dump())])
-    return group_response
+    return await build_group_response(group_dict, current_user)
 
 @api_router.get("/groups", response_model=List[GroupResponse])
 async def get_user_groups(current_user: UserInDB = Depends(get_current_user)):
@@ -183,18 +322,26 @@ async def get_user_groups(current_user: UserInDB = Depends(get_current_user)):
     
     result = []
     for group in groups:
-        # Get all members
-        member_ids = group["member_ids"]
-        members_cursor = users_collection.find({"id": {"$in": member_ids}})
-        members = await members_cursor.to_list(100)
-        
-        group_response = GroupResponse(
-            **group,
-            members=[UserResponse(**m) for m in members]
-        )
-        result.append(group_response)
+        result.append(await build_group_response(group, current_user))
     
     return result
+
+@api_router.put("/groups/{group_id}/archive", response_model=GroupResponse)
+async def update_group_archive(
+    group_id: str,
+    payload: GroupArchiveUpdate,
+    current_user: UserInDB = Depends(get_current_user),
+):
+    """Archive or restore a conversation for the current user only."""
+    await get_group_for_member(group_id, current_user)
+    update = (
+        {"$addToSet": {"archived_by": current_user.id}}
+        if payload.archived
+        else {"$pull": {"archived_by": current_user.id}}
+    )
+    await groups_collection.update_one({"id": group_id}, update)
+    group = await groups_collection.find_one({"id": group_id})
+    return await build_group_response(group, current_user)
 
 @api_router.post("/groups/{group_id}/invite")
 async def create_invite(
@@ -209,6 +356,10 @@ async def create_invite(
     
     if current_user.id not in group["member_ids"]:
         raise HTTPException(status_code=403, detail="Not a member of this group")
+    
+    group = await ensure_group_roles(group)
+    if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
+        raise HTTPException(status_code=403, detail="Observers cannot create invites")
     
     # Generate invite code
     invite_code = generate_invite_code()
@@ -228,7 +379,7 @@ async def create_invite(
     
     await invites_collection.insert_one(invite_dict)
     
-    return {"invite_code": invite_code, "invite_url": f"/join/{invite_code}"}
+    return {"invite_code": invite_code, "invite_url": build_invite_url(invite_code)}
 
 @api_router.post("/groups/join/{invite_code}", response_model=GroupResponse)
 async def join_group(
@@ -246,22 +397,105 @@ async def join_group(
     if not group:
         raise HTTPException(status_code=404, detail="Group not found")
     
+    group = await ensure_group_roles(group)
+    
     # Add user to group if not already member
     if current_user.id not in group["member_ids"]:
         await groups_collection.update_one(
             {"id": group["id"]},
-            {"$push": {"member_ids": current_user.id}}
+            {
+                "$push": {"member_ids": current_user.id},
+                "$set": {f"member_roles.{current_user.id}": GroupRole.PARTICIPANT.value}
+            }
         )
         group["member_ids"].append(current_user.id)
+        group["member_roles"][current_user.id] = GroupRole.PARTICIPANT.value
     
-    # Get all members for response
-    members_cursor = users_collection.find({"id": {"$in": group["member_ids"]}})
-    members = await members_cursor.to_list(100)
+    return await build_group_response(group, current_user)
+
+@api_router.put("/groups/{group_id}/members/{member_id}/role", response_model=GroupResponse)
+async def update_group_member_role(
+    group_id: str,
+    member_id: str,
+    role_update: GroupRoleUpdate,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """Update a group member role. Only hosts can manage roles."""
+    group = await groups_collection.find_one({"id": group_id})
     
-    return GroupResponse(
-        **group,
-        members=[UserResponse(**m) for m in members]
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    if current_user.id not in group["member_ids"]:
+        raise HTTPException(status_code=403, detail="Not a member of this group")
+    
+    group = await ensure_group_roles(group)
+    
+    if group["member_roles"].get(current_user.id) != GroupRole.HOST.value:
+        raise HTTPException(status_code=403, detail="Only hosts can manage roles")
+    
+    if member_id not in group["member_ids"]:
+        raise HTTPException(status_code=404, detail="Member not found in this group")
+    
+    updated_roles = dict(group["member_roles"])
+    updated_roles[member_id] = role_update.role.value
+    
+    if GroupRole.HOST.value not in updated_roles.values():
+        raise HTTPException(status_code=400, detail="Group must have at least one host")
+    
+    await groups_collection.update_one(
+        {"id": group_id},
+        {"$set": {"member_roles": updated_roles}}
     )
+    group["member_roles"] = updated_roles
+    
+    return await build_group_response(group, current_user)
+
+@api_router.get("/groups/{group_id}/question-config", response_model=GroupQuestionConfig)
+async def get_group_question_config(
+    group_id: str,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """Get per-group categories, question toggles, and discussion history."""
+    group = await get_group_for_member(group_id, current_user)
+    return GroupQuestionConfig(**await get_group_question_config_data(group))
+
+@api_router.put("/groups/{group_id}/question-categories", response_model=GroupQuestionConfig)
+async def update_group_question_categories(
+    group_id: str,
+    payload: GroupQuestionCategoriesUpdate,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """Persist category and question selection settings for a group."""
+    group = await get_group_for_member(group_id, current_user)
+    if group["member_roles"].get(current_user.id) != GroupRole.HOST.value:
+        raise HTTPException(status_code=403, detail="Only hosts can manage question settings")
+    
+    await groups_collection.update_one(
+        {"id": group_id},
+        {"$set": {"question_categories": payload.categories}}
+    )
+    group["question_categories"] = payload.categories
+    return GroupQuestionConfig(**await get_group_question_config_data(group))
+
+@api_router.put("/groups/{group_id}/question-history", response_model=GroupQuestionConfig)
+async def update_group_question_history(
+    group_id: str,
+    payload: GroupQuestionHistoryUpdate,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """Persist shared question history for a group discussion."""
+    group = await get_group_for_member(group_id, current_user)
+    if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
+        raise HTTPException(status_code=403, detail="Observers cannot update question history")
+    
+    history = normalize_question_history(payload.history)
+    await groups_collection.update_one(
+        {"id": group_id},
+        {"$set": {"question_history": history}}
+    )
+    group["question_history"] = history
+    return GroupQuestionConfig(**await get_group_question_config_data(group))
 
 # ==================== QUESTION ENDPOINTS ====================
 
@@ -275,6 +509,7 @@ async def get_next_question(
     group = await groups_collection.find_one({"id": group_id})
     if not group or current_user.id not in group["member_ids"]:
         raise HTTPException(status_code=403, detail="Not a member of this group")
+    group = await ensure_group_roles(group)
     
     # Get user's answered questions
     user_progress = await user_questions_collection.find(
@@ -339,6 +574,15 @@ async def mark_question(
     current_user: UserInDB = Depends(get_current_user)
 ):
     """Mark question as completed or skipped"""
+    if group_id:
+        group = await groups_collection.find_one({"id": group_id})
+        if not group or current_user.id not in group["member_ids"]:
+            raise HTTPException(status_code=403, detail="Not a member of this group")
+        
+        group = await ensure_group_roles(group)
+        if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
+            raise HTTPException(status_code=403, detail="Observers cannot mark questions")
+    
     # Check if already marked
     existing = await user_questions_collection.find_one({
         "user_id": current_user.id,

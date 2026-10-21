@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -8,6 +8,11 @@ class QuestionStatus(str, Enum):
     COMPLETED = "completed"
     SKIPPED = "skipped"
 
+class GroupRole(str, Enum):
+    HOST = "host"
+    PARTICIPANT = "participant"
+    OBSERVER = "observer"
+
 # User Models
 class UserBase(BaseModel):
     email: EmailStr
@@ -15,8 +20,12 @@ class UserBase(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
     phone: Optional[str] = None
+    max_messenger: Optional[str] = None
     telegram: Optional[str] = None
     whatsapp: Optional[str] = None
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+    vk: Optional[str] = None
     about_me: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -47,8 +56,12 @@ class UserUpdate(BaseModel):
     age: Optional[int] = None
     gender: Optional[str] = None
     phone: Optional[str] = None
+    max_messenger: Optional[str] = None
     telegram: Optional[str] = None
     whatsapp: Optional[str] = None
+    instagram: Optional[str] = None
+    facebook: Optional[str] = None
+    vk: Optional[str] = None
     about_me: Optional[str] = None
 
 # Group Models
@@ -61,14 +74,39 @@ class GroupCreate(GroupBase):
 class GroupInDB(GroupBase):
     id: str
     creator_id: str
-    member_ids: List[str] = []
+    member_ids: List[str] = Field(default_factory=list)
+    member_roles: Dict[str, GroupRole] = Field(default_factory=dict)
+    archived_by: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class GroupResponse(GroupBase):
     id: str
     creator_id: str
     member_ids: List[str]
-    members: List[UserResponse] = []
+    member_roles: Dict[str, GroupRole] = Field(default_factory=dict)
+    current_user_role: Optional[GroupRole] = None
+    members: List[UserResponse] = Field(default_factory=list)
+    is_archived: bool = False
+
+class GroupArchiveUpdate(BaseModel):
+    archived: bool
+
+class GroupRoleUpdate(BaseModel):
+    role: GroupRole
+
+class GroupQuestionConfig(BaseModel):
+    categories: List[Dict[str, Any]] = Field(default_factory=list)
+    history: Dict[str, List[str]] = Field(
+        default_factory=lambda: {"used": [], "skipped": []}
+    )
+
+class GroupQuestionCategoriesUpdate(BaseModel):
+    categories: List[Dict[str, Any]] = Field(default_factory=list)
+
+class GroupQuestionHistoryUpdate(BaseModel):
+    history: Dict[str, List[str]] = Field(
+        default_factory=lambda: {"used": [], "skipped": []}
+    )
 
 class GroupInvite(BaseModel):
     group_id: str

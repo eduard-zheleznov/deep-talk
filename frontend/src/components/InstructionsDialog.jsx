@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from './ui/button';
 import { FileText, X } from 'lucide-react';
 
-export const InstructionsDialog = () => {
-  const [open, setOpen] = useState(false);
+export const InstructionsDialog = ({ open: controlledOpen, onOpenChange, trigger }) => {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [hasViewed, setHasViewed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   useEffect(() => {
     // Check if user has viewed instructions before
@@ -40,15 +42,19 @@ export const InstructionsDialog = () => {
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={`rounded-full relative ${!hasViewed ? 'animate-pulse-gentle' : ''}`}
-          >
-            <FileText className="w-5 h-5" />
-          </Button>
-        </DialogTrigger>
+        {trigger !== null && (
+          <DialogTrigger asChild>
+            {trigger || (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`rounded-full relative ${!hasViewed ? 'animate-pulse-gentle' : ''}`}
+              >
+                <FileText className="w-5 h-5" />
+              </Button>
+            )}
+          </DialogTrigger>
+        )}
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <button
             onClick={() => setOpen(false)}
@@ -75,7 +81,7 @@ export const InstructionsDialog = () => {
                     playsInline
                     preload="metadata"
                   >
-                    <source src={isMobile ? '/mobile_instruction.mp4' : '/desktop_instruction.mp4'} type="video/mp4" />
+                    <source src={`${process.env.PUBLIC_URL || ''}${isMobile ? '/mobile_instruction.mp4' : '/desktop_instruction.mp4'}`} type="video/mp4" />
                     Ваш браузер не поддерживает видео.
                   </video>
                 </div>

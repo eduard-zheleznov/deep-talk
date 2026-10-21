@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -12,6 +12,8 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || '/groups';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ const LoginPage = () => {
     try {
       await login(email, password);
       toast.success('Добро пожаловать!');
-      navigate('/groups');
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       toast.error(error.message || 'Ошибка входа');
     } finally {
@@ -29,11 +31,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted/20 to-background p-4">
+    <div className="min-h-[100dvh] flex items-start justify-center bg-gradient-to-br from-background via-muted/20 to-background px-4 pb-8 pt-8 sm:pt-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-2">DeepTalk</h1>
-          <p className="text-muted-foreground">Глубокие разговоры начинаются здесь</p>
+          <h1 className="text-4xl font-bold text-primary mb-2">Pro Общение</h1>
+          <p className="text-lg text-muted-foreground leading-snug">Улучшаем разговоры</p>
         </div>
 
         <div className="bg-card rounded-2xl shadow-lg p-8 border border-border/50">
@@ -48,6 +50,7 @@ const LoginPage = () => {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
                 className="h-12"
               />
@@ -61,6 +64,7 @@ const LoginPage = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 required
                 className="h-12"
               />
@@ -78,7 +82,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
               Нет аккаунта?{' '}
-              <Link to="/register" className="text-primary hover:underline font-medium">
+              <Link to="/register" state={{ from: redirectTo }} className="text-primary hover:underline font-medium">
                 Зарегистрироваться
               </Link>
             </p>

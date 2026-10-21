@@ -1,201 +1,135 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Archive, ExternalLink, MessageCircle, Plus, RotateCcw, Users } from 'lucide-react';
 import { api } from '../api/client';
+import { AppHeader } from '../components/AppHeader';
+import { BottomNav } from '../components/BottomNav';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '../components/ui/dialog';
-import { Users, Plus, ExternalLink, LogOut, User } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { toast } from 'sonner';
 
+const participantLabel = (count) => {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  if (lastTwo >= 11 && lastTwo <= 14) return 'участников';
+  if (last === 1) return 'участник';
+  if (last >= 2 && last <= 4) return 'участника';
+  return 'участников';
+};
+
 const GroupsPage = () => {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [joinDialogOpen, setJoinDialogOpen] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
+  const [filter, setFilter] = useState('active');
+  const [joinOpen, setJoinOpen] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const [joining, setJoining] = useState(false);
+  const [archivingId, setArchivingId] = useState('');
 
   useEffect(() => {
     loadGroups();
-    seedQuestionsIfNeeded();
+    api.seedQuestions().catch(() => {});
   }, []);
-
-  const seedQuestionsIfNeeded = async () => {
-    try {
-      await api.seedQuestions();
-    } catch (error) {
-      // Already seeded, ignore
-    }
-  };
 
   const loadGroups = async () => {
     try {
-      const data = await api.getGroups();
-      setGroups(data);
+      setGroups(await api.getGroups());
     } catch (error) {
-      toast.error('Ошибка загрузки групп');
+      toast.error('Не удалось загрузить разговоры');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    if (!newGroupName.trim()) return;
+  const visibleGroups = useMemo(
+    () => groups.filter((group) => filter === 'archive' ? group.is_archived : !group.is_archived),
+    [groups, filter],
+  );
 
-    try {
-      await api.createGroup(newGroupName);
-      toast.success('Группа создана!');
-      setNewGroupName('');
-      setCreateDialogOpen(false);
-      loadGroups();
-    } catch (error) {
-      toast.error(error.message || 'Ошибка создания группы');
-    }
-  };
-
-  const handleJoinGroup = async (e) => {
-    e.preventDefault();
+  const handleJoin = async (event) => {
+    event.preventDefault();
     if (!inviteCode.trim()) return;
-
+    setJoining(true);
     try {
-      await api.joinGroup(inviteCode.toUpperCase());
-      toast.success('Вы присоединились к группе!');
+      const group = await api.joinGroup(inviteCode.trim().toUpperCase());
+      setJoinOpen(false);
       setInviteCode('');
-      setJoinDialogOpen(false);
-      loadGroups();
+      navigate(`/group/${group.id}`);
     } catch (error) {
       toast.error(error.message || 'Неверный код приглашения');
+    } finally {
+      setJoining(false);
     }
   };
 
-  const handleGroupClick = (groupId) => {
-    navigate(`/group/${groupId}`);
+  const toggleArchive = async (event, group) => {
+    event.stopPropagation();
+    setArchivingId(group.id);
+    try {
+      const updated = await api.setGroupArchived(group.id, !group.is_archived);
+      setGroups((items) => items.map((item) => item.id === group.id ? updated : item));
+      toast.success(updated.is_archived ? 'Разговор перемещён в архив' : 'Разговор восстановлен');
+    } catch (error) {
+      toast.error(error.message || 'Не удалось изменить архив');
+    } finally {
+      setArchivingId('');
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Загрузка...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/20 to-background">
-      {/* Header */}
-      <header className="bg-card/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-primary">DeepTalk</h1>
-            <p className="text-sm text-muted-foreground">Привет, {user?.name || user?.email}!</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
-              <User className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-muted/25 pb-24">
+      <AppHeader />
+      <main className="mx-auto max-w-2xl px-4 py-6">
+        <div><h1 className="text-2xl font-bold tracking-tight">Разговоры</h1><p className="mt-1 text-sm text-muted-foreground">Выберите разговор или начните новый</p></div>
 
-      {/* Content */}
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-6">
-          <h2 className="text-2xl font-semibold mb-4">Мои группы</h2>
-          <div className="flex gap-3">
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-1 h-12">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Создать группу
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Создать новую группу</DialogTitle>
-                  <DialogDescription>Введите название для вашей новой группы</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateGroup} className="space-y-4 mt-4">
-                  <Input
-                    placeholder="Название группы"
-                    value={newGroupName}
-                    onChange={(e) => setNewGroupName(e.target.value)}
-                    className="h-12"
-                    autoFocus
-                  />
-                  <Button type="submit" className="w-full h-12">Создать</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+        <Button type="button" onClick={() => navigate('/new-conversation')} className="mt-5 h-14 w-full rounded-xl text-base shadow-sm">
+          <Plus className="mr-2 h-5 w-5" />Новый разговор
+        </Button>
+        <Button type="button" variant="ghost" onClick={() => setJoinOpen(true)} className="mt-2 h-11 w-full text-muted-foreground">
+          <ExternalLink className="mr-2 h-4 w-4" />Присоединиться по коду
+        </Button>
 
-            <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="flex-1 h-12">
-                  <ExternalLink className="w-5 h-5 mr-2" />
-                  Присоединиться
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Присоединиться к группе</DialogTitle>
-                  <DialogDescription>Введите код приглашения, полученный от участника группы</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleJoinGroup} className="space-y-4 mt-4">
-                  <Input
-                    placeholder="Код приглашения"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                    className="h-12"
-                    maxLength={8}
-                    autoFocus
-                  />
-                  <Button type="submit" className="w-full h-12">Присоединиться</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+        <div className="mt-5 grid grid-cols-2 rounded-xl bg-muted p-1" role="tablist" aria-label="Фильтр разговоров">
+          {[
+            ['active', 'Активные'],
+            ['archive', 'Архив'],
+          ].map(([value, label]) => (
+            <button key={value} type="button" role="tab" aria-selected={filter === value} onClick={() => setFilter(value)} className={`h-10 rounded-lg text-sm font-semibold transition-all ${filter === value ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'}`}>{label}</button>
+          ))}
         </div>
 
-        {/* Groups List */}
-        <div className="space-y-3">
-          {groups.length === 0 ? (
-            <div className="text-center py-12 bg-card rounded-2xl border border-border/50">
-              <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground mb-4">У вас пока нет групп</p>
-              <p className="text-sm text-muted-foreground">
-                Создайте новую группу или присоединитесь к существующей
-              </p>
+        <section className="mt-4 space-y-3" aria-live="polite">
+          {loading ? (
+            <div className="py-16 text-center text-sm text-muted-foreground">Загрузка…</div>
+          ) : visibleGroups.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border bg-card/60 px-5 py-12 text-center">
+              {filter === 'archive' ? <Archive className="mx-auto h-10 w-10 text-muted-foreground/60" /> : <MessageCircle className="mx-auto h-10 w-10 text-primary/70" />}
+              <h2 className="mt-4 font-semibold">{filter === 'archive' ? 'Архив пока пуст' : 'Пока нет разговоров'}</h2>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{filter === 'archive' ? 'Здесь появятся разговоры, которые вы решите скрыть.' : 'Создайте первый или присоединитесь по приглашению.'}</p>
             </div>
-          ) : (
-            groups.map((group) => (
-              <div
-                key={group.id}
-                onClick={() => handleGroupClick(group.id)}
-                className="bg-card rounded-xl p-4 border border-border/50 hover:border-primary/50 cursor-pointer transition-all hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg">{group.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {group.members?.length || 0} {group.members?.length === 1 ? 'участник' : 'участников'}
-                    </p>
-                  </div>
-                  <Users className="w-6 h-6 text-muted-foreground" />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+          ) : visibleGroups.map((group) => {
+            const count = group.members?.length || 0;
+            const ArchiveIcon = group.is_archived ? RotateCcw : Archive;
+            return (
+              <article key={group.id} onClick={() => navigate(`/group/${group.id}`)} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Users className="h-5 w-5" /></span>
+                <div className="min-w-0 flex-1"><h2 className="truncate font-semibold">{group.name}</h2><p className="mt-0.5 text-sm text-muted-foreground">{count} {participantLabel(count)}</p></div>
+                <button type="button" onClick={(event) => toggleArchive(event, group)} disabled={archivingId === group.id} title={group.is_archived ? 'Вернуть в активные' : 'В архив'} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><ArchiveIcon className="h-5 w-5" /><span className="sr-only">{group.is_archived ? 'Вернуть в активные' : 'В архив'}</span></button>
+              </article>
+            );
+          })}
+        </section>
       </main>
+      <BottomNav />
+
+      <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
+        <DialogContent className="max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto top-[max(0.5rem,env(safe-area-inset-top))] translate-y-0 sm:top-1/2 sm:-translate-y-1/2">
+          <DialogHeader><DialogTitle>Присоединиться к разговору</DialogTitle><DialogDescription>Введите код приглашения, который вам прислали.</DialogDescription></DialogHeader>
+          <form onSubmit={handleJoin} className="space-y-4"><Input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="Код приглашения" maxLength={8} autoCapitalize="characters" autoCorrect="off" autoComplete="one-time-code" className="h-12" autoFocus /><Button type="submit" className="h-12 w-full" disabled={joining || !inviteCode.trim()}>{joining ? 'Присоединяем…' : 'Присоединиться'}</Button></form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

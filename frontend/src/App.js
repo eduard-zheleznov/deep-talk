@@ -1,20 +1,23 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-// Pages
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import GroupsPage from './pages/GroupsPage';
 import GroupDetailPage from './pages/GroupDetailPage';
+import JoinGroupPage from './pages/JoinGroupPage';
 import ProfilePage from './pages/ProfilePage';
+import SettingsPage from './pages/SettingsPage';
+import MyQuestionsPage from './pages/MyQuestionsPage';
+import NewConversationPage from './pages/NewConversationPage';
 
 import './App.css';
 
-// Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -24,12 +27,13 @@ const ProtectedRoute = ({ children }) => {
     );
   }
 
-  return user ? children : <Navigate to="/login" replace />;
+  const from = `${location.pathname}${location.search}`;
+  return user ? children : <Navigate to="/login" replace state={{ from }} />;
 };
 
-// Public Route wrapper (redirect to groups if already logged in)
 const PublicRoute = ({ children }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -39,13 +43,18 @@ const PublicRoute = ({ children }) => {
     );
   }
 
-  return user ? <Navigate to="/groups" replace /> : children;
+  return user ? <Navigate to={location.state?.from || '/groups'} replace /> : children;
 };
 
 function AppRoutes() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={
         <PublicRoute>
           <LoginPage />
@@ -57,10 +66,14 @@ function AppRoutes() {
         </PublicRoute>
       } />
 
-      {/* Protected routes */}
       <Route path="/groups" element={
         <ProtectedRoute>
           <GroupsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/new-conversation" element={
+        <ProtectedRoute>
+          <NewConversationPage />
         </ProtectedRoute>
       } />
       <Route path="/group/:groupId" element={
@@ -68,16 +81,28 @@ function AppRoutes() {
           <GroupDetailPage />
         </ProtectedRoute>
       } />
+      <Route path="/join/:inviteCode" element={
+        <ProtectedRoute>
+          <JoinGroupPage />
+        </ProtectedRoute>
+      } />
       <Route path="/profile" element={
         <ProtectedRoute>
           <ProfilePage />
         </ProtectedRoute>
       } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings/questions" element={
+        <ProtectedRoute>
+          <MyQuestionsPage />
+        </ProtectedRoute>
+      } />
 
-      {/* Redirect root to groups */}
       <Route path="/" element={<Navigate to="/groups" replace />} />
-      
-      {/* Catch all */}
       <Route path="*" element={<Navigate to="/groups" replace />} />
     </Routes>
   );
@@ -85,7 +110,7 @@ function AppRoutes() {
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={process.env.PUBLIC_URL || ''}>
       <AuthProvider>
         <AppRoutes />
         <Toaster position="top-center" richColors />
