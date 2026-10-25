@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'pro-obshenie-v1';
+const CACHE_VERSION = 'pro-obshenie-v2';
 const APP_CACHE = `${CACHE_VERSION}-app`;
 const APP_ROOT = '/DeepTalk/';
 const CORE_ASSETS = [
@@ -15,7 +15,7 @@ const cacheBuildAssets = async (cache) => {
   if (!response.ok) return;
   const manifest = await response.json();
   const files = Object.values(manifest.files || {})
-    .filter((path) => typeof path === 'string' && path.startsWith(APP_ROOT));
+    .filter((path) => typeof path === 'string' && path.startsWith(APP_ROOT) && !path.endsWith('.map'));
   await cache.addAll([...new Set(files)]);
 };
 
