@@ -355,19 +355,16 @@ const GroupDetailPage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Пригласить в разговор</DialogTitle>
-            <DialogDescription>Ссылка откроет Pro Общение и добавит человека в этот разговор</DialogDescription>
+            <DialogDescription><span className="block">Отправьте эту ссылку тому,</span><span className="block">кого хотите пригласить.</span></DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="rounded-lg border border-border bg-muted/40 p-3">
-              <p className="break-all text-sm font-medium">{getInviteLink()}</p>
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-center">
+              <p className="text-sm font-semibold tracking-wide">Код: {inviteData?.invite_code}</p>
             </div>
             <Button onClick={copyInviteLink} className="w-full h-12">
               <Copy className="w-4 h-4 mr-2" />
               Скопировать ссылку
             </Button>
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">Код: {inviteData?.invite_code}</p>
-            </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -98,6 +98,12 @@ class ApiClient {
     });
   }
 
+  async deleteGroup(groupId) {
+    return this.request(`/api/groups/${groupId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async createInvite(groupId) {
     return this.request(`/api/groups/${groupId}/invite`, {
       method: 'POST',

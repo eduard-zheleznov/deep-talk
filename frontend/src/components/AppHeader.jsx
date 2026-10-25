@@ -10,7 +10,11 @@ export const AppHeader = ({ title, onTitleClick }) => (
           className="rounded-lg px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           aria-label="На главный экран"
         >
-          <span className="block text-xl font-bold leading-tight text-primary sm:text-2xl">Pro Общение</span>
+          <span className="flex items-center justify-center gap-2 text-xl font-bold leading-tight text-primary sm:text-2xl">
+            <span aria-hidden="true" className="font-semibold">&lt;</span>
+            <span>Pro Общение</span>
+            <span aria-hidden="true" className="font-semibold">&gt;</span>
+          </span>
           <span className="mt-0.5 block text-sm font-medium leading-tight text-muted-foreground">Улучшаем разговоры</span>
         </button>
         {title && (

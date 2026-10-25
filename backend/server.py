@@ -149,6 +149,7 @@ async def build_group_response(group: dict, current_user: UserInDB) -> GroupResp
         current_user_role=group["member_roles"].get(current_user.id),
         members=[UserResponse(**member) for member in members],
         is_archived=current_user.id in group.get("archived_by", []),
+        can_delete=group.get("creator_id") == current_user.id,
     )
 
 def build_invite_url(invite_code: str) -> str:
@@ -342,6 +343,24 @@ async def update_group_archive(
     await groups_collection.update_one({"id": group_id}, update)
     group = await groups_collection.find_one({"id": group_id})
     return await build_group_response(group, current_user)
+
+@api_router.delete("/groups/{group_id}")
+async def delete_group(
+    group_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+):
+    """Permanently delete an archived conversation owned by the current user."""
+    group = await get_group_for_member(group_id, current_user)
+    if group.get("creator_id") != current_user.id:
+        raise HTTPException(status_code=403, detail="Удалить разговор может только его создатель")
+    if current_user.id not in group.get("archived_by", []):
+        raise HTTPException(status_code=409, detail="Сначала переместите разговор в архив")
+
+    await invites_collection.delete_many({"group_id": group_id})
+    result = await groups_collection.delete_one({"id": group_id, "creator_id": current_user.id})
+    if result.deleted_count != 1:
+        raise HTTPException(status_code=409, detail="Не удалось удалить разговор")
+    return {"success": True}
 
 @api_router.post("/groups/{group_id}/invite")
 async def create_invite(

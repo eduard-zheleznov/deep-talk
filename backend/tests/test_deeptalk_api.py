@@ -326,6 +326,63 @@ class TestGroupRoles:
         )
         assert mark_response.status_code == 403
 
+    def test_only_creator_can_delete_archived_group_and_invites_are_removed(self, api_client):
+        creator = api_client.post(f"{BASE_URL}/api/auth/register", json={
+            "email": f"delete_owner_{uuid.uuid4().hex[:8]}@test.com",
+            "password": "password123",
+            "secret_question": "Test?",
+            "secret_answer": "test",
+        })
+        guest = api_client.post(f"{BASE_URL}/api/auth/register", json={
+            "email": f"delete_guest_{uuid.uuid4().hex[:8]}@test.com",
+            "password": "password123",
+            "secret_question": "Test?",
+            "secret_answer": "test",
+        })
+        creator_headers = {"Authorization": f"Bearer {creator.json()['access_token']}"}
+        guest_headers = {"Authorization": f"Bearer {guest.json()['access_token']}"}
+
+        group = requests.post(
+            f"{BASE_URL}/api/groups",
+            json={"name": "Delete Test"},
+            headers=creator_headers,
+        ).json()
+        group_id = group["id"]
+        invite = requests.post(
+            f"{BASE_URL}/api/groups/{group_id}/invite",
+            headers=creator_headers,
+        ).json()
+        requests.post(
+            f"{BASE_URL}/api/groups/join/{invite['invite_code']}",
+            headers=guest_headers,
+        )
+
+        active_delete = requests.delete(f"{BASE_URL}/api/groups/{group_id}", headers=creator_headers)
+        assert active_delete.status_code == 409
+
+        requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/archive",
+            json={"archived": True},
+            headers=guest_headers,
+        )
+        guest_delete = requests.delete(f"{BASE_URL}/api/groups/{group_id}", headers=guest_headers)
+        assert guest_delete.status_code == 403
+
+        requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/archive",
+            json={"archived": True},
+            headers=creator_headers,
+        )
+        deleted = requests.delete(f"{BASE_URL}/api/groups/{group_id}", headers=creator_headers)
+        assert deleted.status_code == 200
+        assert deleted.json()["success"] is True
+
+        stale_invite = requests.post(
+            f"{BASE_URL}/api/groups/join/{invite['invite_code']}",
+            headers=guest_headers,
+        )
+        assert stale_invite.status_code == 404
+
     def test_group_question_config_has_all_questions_and_persists_history(self, api_client):
         """Group question settings expose all 100 questions and persist per-group history"""
         host_email = f"settings_{uuid.uuid4().hex[:8]}@test.com"

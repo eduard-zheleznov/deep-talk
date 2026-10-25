@@ -87,6 +87,7 @@ class GroupResponse(GroupBase):
     current_user_role: Optional[GroupRole] = None
     members: List[UserResponse] = Field(default_factory=list)
     is_archived: bool = False
+    can_delete: bool = False
 
 class GroupArchiveUpdate(BaseModel):
     archived: bool

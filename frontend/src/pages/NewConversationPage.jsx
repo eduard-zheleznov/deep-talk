@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Copy, UserPlus } from 'lucide-react';
+import { CheckSquare, Copy, Save, UserPlus } from 'lucide-react';
 import { api } from '../api/client';
 import { AppHeader } from '../components/AppHeader';
 import { BottomNav } from '../components/BottomNav';
@@ -86,6 +86,13 @@ export const NewConversationPage = () => {
     if (current) navigate(`/group/${current.id}`);
   };
 
+  const saveConversation = async () => {
+    const current = await ensureGroup();
+    if (!current) return;
+    toast.success('Разговор сохранён');
+    navigate('/groups');
+  };
+
   const inviteLink = invite?.invite_url ? new URL(invite.invite_url, window.location.origin).toString() : '';
 
   return (
@@ -95,15 +102,21 @@ export const NewConversationPage = () => {
         <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm sm:p-7">
           <p className="text-sm font-semibold text-primary">Новый разговор</p>
           <h1 className="mt-2 text-2xl font-bold">Как назовём разговор?</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Название — единственное обязательное поле. Участников и темы можно добавить сейчас или позже.</p>
-          <label className="mt-6 block text-sm font-semibold" htmlFor="conversation-name">Название разговора</label>
-          <Input id="conversation-name" value={name} onChange={(event) => setName(event.target.value)} disabled={Boolean(group)} maxLength={80} autoFocus className="mt-2 h-12" placeholder="Например, Наш вечер" />
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            <span className="block">Название — единственное</span>
+            <span className="block">обязательное поле.</span>
+          </p>
+          <label className="mt-6 block text-sm font-semibold" htmlFor="conversation-name">Название</label>
+          <Input id="conversation-name" value={name} onChange={(event) => setName(event.target.value)} disabled={Boolean(group)} maxLength={80} autoFocus className="mt-2 h-12" placeholder="Мама / Анна / Семья" />
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Button type="button" variant="outline" className="h-12 justify-start" onClick={handleInvite} disabled={creating}><UserPlus className="mr-2 h-5 w-5" />Пригласить участников</Button>
             <Button type="button" variant="outline" className="h-12 justify-start" onClick={handleThemes} disabled={creating}><CheckSquare className="mr-2 h-5 w-5" />Выбрать темы</Button>
+            <Button type="button" variant="outline" className="h-12 justify-start" onClick={handleInvite} disabled={creating}><UserPlus className="mr-2 h-5 w-5" />Пригласить участников</Button>
           </div>
-          <Button type="button" className="mt-6 h-12 w-full rounded-xl text-base" onClick={startConversation} disabled={creating || !name.trim()}>
+          <Button type="button" variant="outline" className="mt-6 h-12 w-full rounded-xl text-base" onClick={saveConversation} disabled={creating || !name.trim()}>
+            <Save className="mr-2 h-5 w-5" />Сохранить
+          </Button>
+          <Button type="button" className="mt-3 h-12 w-full rounded-xl text-base" onClick={startConversation} disabled={creating || !name.trim()}>
             {creating ? 'Создаём…' : 'Начать разговор'}
           </Button>
         </div>
@@ -112,7 +125,7 @@ export const NewConversationPage = () => {
 
       <CategorySelector categories={categories} onUpdate={updateThemes} open={themesOpen} onOpenChange={setThemesOpen} trigger={null} />
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-md"><DialogHeader><DialogTitle>Пригласить в разговор</DialogTitle><DialogDescription>Отправьте эту ссылку тому, кого хотите пригласить.</DialogDescription></DialogHeader><div className="rounded-xl border bg-muted/40 p-3 text-sm break-all">{inviteLink}</div><Button onClick={async () => { await copyText(inviteLink); toast.success('Ссылка скопирована'); }}><Copy className="mr-2 h-4 w-4" />Скопировать ссылку</Button></DialogContent>
+        <DialogContent className="max-w-md"><DialogHeader><DialogTitle>Пригласить в разговор</DialogTitle><DialogDescription><span className="block">Отправьте эту ссылку тому,</span><span className="block">кого хотите пригласить.</span></DialogDescription></DialogHeader><div className="rounded-xl border bg-muted/40 p-3 text-center text-sm font-semibold tracking-wide">Код: {invite?.invite_code}</div><Button onClick={async () => { await copyText(inviteLink); toast.success('Ссылка скопирована'); }}><Copy className="mr-2 h-4 w-4" />Скопировать ссылку</Button></DialogContent>
       </Dialog>
     </div>
   );

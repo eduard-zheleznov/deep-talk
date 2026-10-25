@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Archive, ExternalLink, MessageCircle, Plus, RotateCcw, Users } from 'lucide-react';
+import { Archive, ExternalLink, MessageCircle, Plus, RotateCcw, Trash2, Users } from 'lucide-react';
 import { api } from '../api/client';
 import { AppHeader } from '../components/AppHeader';
 import { BottomNav } from '../components/BottomNav';
@@ -27,6 +27,9 @@ const GroupsPage = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [joining, setJoining] = useState(false);
   const [archivingId, setArchivingId] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -78,6 +81,34 @@ const GroupsPage = () => {
     }
   };
 
+  const openDeleteDialog = (event, group) => {
+    event.stopPropagation();
+    setDeleteTarget(group);
+    setDeleteConfirmation('');
+  };
+
+  const closeDeleteDialog = (open) => {
+    if (open || deleting) return;
+    setDeleteTarget(null);
+    setDeleteConfirmation('');
+  };
+
+  const deleteConversation = async () => {
+    if (!deleteTarget || deleteConfirmation !== 'УДАЛИТЬ') return;
+    setDeleting(true);
+    try {
+      await api.deleteGroup(deleteTarget.id);
+      setGroups((items) => items.filter((item) => item.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setDeleteConfirmation('');
+      toast.success('Разговор удалён');
+    } catch (error) {
+      toast.error(error.message || 'Не удалось удалить разговор');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/25 pb-24">
       <AppHeader />
@@ -116,7 +147,12 @@ const GroupsPage = () => {
               <article key={group.id} onClick={() => navigate(`/group/${group.id}`)} className="flex cursor-pointer items-center gap-3 rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition hover:border-primary/30 hover:shadow-md">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Users className="h-5 w-5" /></span>
                 <div className="min-w-0 flex-1"><h2 className="truncate font-semibold">{group.name}</h2><p className="mt-0.5 text-sm text-muted-foreground">{count} {participantLabel(count)}</p></div>
-                <button type="button" onClick={(event) => toggleArchive(event, group)} disabled={archivingId === group.id} title={group.is_archived ? 'Вернуть в активные' : 'В архив'} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><ArchiveIcon className="h-5 w-5" /><span className="sr-only">{group.is_archived ? 'Вернуть в активные' : 'В архив'}</span></button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button type="button" onClick={(event) => toggleArchive(event, group)} disabled={archivingId === group.id} title={group.is_archived ? 'Вернуть в активные' : 'В архив'} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><ArchiveIcon className="h-5 w-5" /><span className="sr-only">{group.is_archived ? 'Вернуть в активные' : 'В архив'}</span></button>
+                  {group.is_archived && (group.can_delete || group.current_user_role === 'host') && (
+                    <button type="button" onClick={(event) => openDeleteDialog(event, group)} title="Удалить навсегда" className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"><Trash2 className="h-5 w-5" /><span className="sr-only">Удалить навсегда</span></button>
+                  )}
+                </div>
               </article>
             );
           })}
@@ -126,8 +162,29 @@ const GroupsPage = () => {
 
       <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
         <DialogContent className="max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto top-[max(0.5rem,env(safe-area-inset-top))] translate-y-0 sm:top-1/2 sm:-translate-y-1/2">
-          <DialogHeader><DialogTitle>Присоединиться к разговору</DialogTitle><DialogDescription>Введите код приглашения, который вам прислали.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>Присоединиться к разговору</DialogTitle><DialogDescription><span className="block">Введите код приглашения,</span><span className="block">который вам прислали.</span></DialogDescription></DialogHeader>
           <form onSubmit={handleJoin} className="space-y-4"><Input value={inviteCode} onChange={(event) => setInviteCode(event.target.value.toUpperCase())} placeholder="Код приглашения" maxLength={8} autoCapitalize="characters" autoCorrect="off" autoComplete="one-time-code" className="h-12" autoFocus /><Button type="submit" className="h-12 w-full" disabled={joining || !inviteCode.trim()}>{joining ? 'Присоединяем…' : 'Присоединиться'}</Button></form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(deleteTarget)} onOpenChange={closeDeleteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Удалить разговор навсегда?</DialogTitle>
+            <DialogDescription>
+              Разговор «{deleteTarget?.name}», его настройки, история и приглашения будут удалены без возможности восстановления.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium" htmlFor="delete-confirmation">Для подтверждения введите УДАЛИТЬ</label>
+              <Input id="delete-confirmation" value={deleteConfirmation} onChange={(event) => setDeleteConfirmation(event.target.value.toUpperCase())} autoComplete="off" className="mt-2 h-12" placeholder="УДАЛИТЬ" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button type="button" variant="outline" onClick={() => closeDeleteDialog(false)} disabled={deleting}>Отмена</Button>
+              <Button type="button" variant="destructive" onClick={deleteConversation} disabled={deleting || deleteConfirmation !== 'УДАЛИТЬ'}>{deleting ? 'Удаляем…' : 'Удалить'}</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
