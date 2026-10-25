@@ -1,7 +1,20 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-export const AppHeader = ({ title, onTitleClick }) => (
-  <>
+export const AppHeader = ({ title, onTitleClick }) => {
+  const [online, setOnline] = useState(() => navigator.onLine);
+
+  useEffect(() => {
+    const goOnline = () => setOnline(true);
+    const goOffline = () => setOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  return <>
     <header className="fixed inset-x-0 top-0 z-40 border-b border-border/60 bg-background/95 backdrop-blur-md">
       <div className="mx-auto flex min-h-[78px] max-w-3xl items-center justify-center px-4 py-3 text-center">
         <button
@@ -22,10 +35,15 @@ export const AppHeader = ({ title, onTitleClick }) => (
             {title}
           </span>
         )}
+        {!online && (
+          <span role="status" title="Нет интернета — доступен просмотр сохранённых данных" className="absolute right-3 rounded-full bg-foreground px-2.5 py-1 text-xs font-semibold text-background shadow-sm">
+            Офлайн
+          </span>
+        )}
       </div>
     </header>
     <div className="h-[78px] shrink-0" aria-hidden="true" />
-  </>
-);
+  </>;
+};
 
 export default AppHeader;

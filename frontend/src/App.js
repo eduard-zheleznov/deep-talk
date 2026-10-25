@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -14,28 +14,6 @@ import MyQuestionsPage from './pages/MyQuestionsPage';
 import NewConversationPage from './pages/NewConversationPage';
 
 import './App.css';
-
-const ConnectionStatus = () => {
-  const [online, setOnline] = useState(() => navigator.onLine);
-
-  useEffect(() => {
-    const goOnline = () => setOnline(true);
-    const goOffline = () => setOnline(false);
-    window.addEventListener('online', goOnline);
-    window.addEventListener('offline', goOffline);
-    return () => {
-      window.removeEventListener('online', goOnline);
-      window.removeEventListener('offline', goOffline);
-    };
-  }, []);
-
-  if (online) return null;
-  return (
-    <div role="status" className="fixed inset-x-4 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md rounded-xl bg-foreground px-4 py-3 text-center text-sm font-medium text-background shadow-lg">
-      Нет интернета — доступен просмотр сохранённых данных
-    </div>
-  );
-};
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -135,7 +113,6 @@ function App() {
     <BrowserRouter basename={process.env.PUBLIC_URL || ''}>
       <AuthProvider>
         <AppRoutes />
-        <ConnectionStatus />
         <Toaster position="top-center" richColors />
       </AuthProvider>
     </BrowserRouter>
