@@ -144,7 +144,11 @@ const GroupsPage = () => {
             <div className="rounded-2xl border border-dashed border-border bg-card/60 px-5 py-12 text-center">
               {filter === 'archive' ? <Archive className="mx-auto h-10 w-10 text-muted-foreground/60" /> : <MessageCircle className="mx-auto h-10 w-10 text-primary/70" />}
               <h2 className="mt-4 font-semibold">{filter === 'archive' ? 'Архив пока пуст' : 'Пока нет разговоров'}</h2>
-              <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{filter === 'archive' ? 'Здесь появятся разговоры, которые вы решите скрыть.' : 'Создайте первый или присоединитесь по приглашению.'}</p>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                {filter === 'archive'
+                  ? 'Здесь появятся разговоры, которые вы решите скрыть.'
+                  : <><span className="block">Создайте первый или</span><span className="block">присоединитесь по приглашению.</span></>}
+              </p>
             </div>
           ) : visibleGroups.map((group) => {
             const count = group.members?.length || 0;
@@ -174,7 +178,7 @@ const GroupsPage = () => {
       </Dialog>
 
       <Dialog open={Boolean(deleteTarget)} onOpenChange={closeDeleteDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto top-[max(0.5rem,env(safe-area-inset-top))] translate-y-0 sm:top-1/2 sm:-translate-y-1/2">
           <DialogHeader>
             <DialogTitle>Удалить разговор навсегда?</DialogTitle>
             <DialogDescription>

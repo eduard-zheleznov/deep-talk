@@ -139,12 +139,19 @@ const GroupDetailPage = () => {
     }
   };
 
-  const persistHistory = async (updatedHistory) => {
+  const persistHistory = async (updatedHistory, offlineAction = null) => {
     const previousHistory = history;
     setHistory(updatedHistory);
 
     try {
-      const config = await api.updateGroupQuestionHistory(groupId, updatedHistory);
+      const config = offlineAction
+        ? await api.updateGroupQuestionHistoryAction(
+          groupId,
+          offlineAction.questionId,
+          offlineAction.action,
+          updatedHistory,
+        )
+        : await api.updateGroupQuestionHistory(groupId, updatedHistory);
       setHistory(config.history || updatedHistory);
       return true;
     } catch (error) {
@@ -178,7 +185,10 @@ const GroupDetailPage = () => {
     }
 
     const updatedHistory = questionManager.markAsUsed(currentQuestion.id, history);
-    const saved = await persistHistory(updatedHistory);
+    const saved = await persistHistory(updatedHistory, {
+      questionId: currentQuestion.id,
+      action: 'used',
+    });
     if (!saved) return;
 
     if (currentQuestion.serverQuestionId) {
@@ -196,7 +206,10 @@ const GroupDetailPage = () => {
     }
 
     const updatedHistory = questionManager.markAsSkipped(currentQuestion.id, history);
-    const saved = await persistHistory(updatedHistory);
+    const saved = await persistHistory(updatedHistory, {
+      questionId: currentQuestion.id,
+      action: 'skipped',
+    });
     if (!saved) return;
 
     if (currentQuestion.serverQuestionId) {
