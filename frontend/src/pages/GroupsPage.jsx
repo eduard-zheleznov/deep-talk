@@ -38,7 +38,13 @@ const GroupsPage = () => {
 
   const loadGroups = async () => {
     try {
-      setGroups(await api.getGroups());
+      const loadedGroups = await api.getGroups();
+      setGroups(loadedGroups);
+      if (navigator.onLine) {
+        loadedGroups.forEach((group) => {
+          api.getGroupQuestionConfig(group.id).catch(() => {});
+        });
+      }
     } catch (error) {
       toast.error('Не удалось загрузить разговоры');
     } finally {

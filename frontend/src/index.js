@@ -6,13 +6,10 @@ import App from "@/App";
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .getRegistrations()
-      .then((registrations) => {
-        registrations
-          .filter((registration) => registration.scope.includes("/DeepTalk/"))
-          .forEach((registration) => registration.unregister());
+      .register(`${process.env.PUBLIC_URL || ""}/service-worker.js`, {
+        scope: `${process.env.PUBLIC_URL || "/"}/`,
       })
-      .catch(() => {});
+      .catch((error) => console.error("Service worker registration failed:", error));
   });
 }
 

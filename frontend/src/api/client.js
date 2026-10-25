@@ -1,4 +1,19 @@
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const CACHE_PREFIX = 'pro_obshenie_api_cache_v1';
+
+const fingerprint = (value = '') => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0;
+  }
+  return Math.abs(hash).toString(36);
+};
+
+const canCacheEndpoint = (endpoint) => (
+  endpoint === '/api/profile'
+  || endpoint === '/api/groups'
+  || /^\/api\/groups\/[^/]+\/question-config$/.test(endpoint)
+);
 
 class ApiClient {
   constructor() {
@@ -29,19 +44,49 @@ class ApiClient {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const method = (options.method || 'GET').toUpperCase();
     const config = {
       ...options,
       headers: this.getHeaders(),
     };
 
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Network error' }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
+    if (method !== 'GET' && typeof navigator !== 'undefined' && !navigator.onLine) {
+      const error = new Error('Для этого действия нужно подключение к интернету');
+      error.code = 'OFFLINE';
+      throw error;
     }
 
-    return response.json();
+    if (method === 'GET' && typeof navigator !== 'undefined' && !navigator.onLine) {
+      const cached = this.readCache(endpoint);
+      if (cached !== null) return cached;
+      const error = new Error('Нет подключения и сохранённых данных для этого раздела');
+      error.code = 'OFFLINE';
+      throw error;
+    }
+
+    try {
+      const response = await fetch(url, config);
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({ detail: 'Ошибка сети' }));
+        const error = new Error(body.detail || `HTTP ${response.status}`);
+        error.status = response.status;
+        throw error;
+      }
+
+      const data = await response.json();
+      if (method === 'GET') this.writeCache(endpoint, data);
+      return data;
+    } catch (error) {
+      if (method === 'GET' && (!navigator.onLine || error instanceof TypeError)) {
+        const cached = this.readCache(endpoint);
+        if (cached !== null) return cached;
+        const offlineError = new Error('Нет подключения и сохранённых данных для этого раздела');
+        offlineError.code = 'OFFLINE';
+        throw offlineError;
+      }
+      throw error;
+    }
   }
 
   // Auth
@@ -64,7 +109,34 @@ class ApiClient {
   }
 
   logout() {
+    const tokenFingerprint = fingerprint(this.token || 'anonymous');
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith(`${CACHE_PREFIX}:${tokenFingerprint}:`))
+      .forEach((key) => localStorage.removeItem(key));
     this.setToken(null);
+  }
+
+  getCacheKey(endpoint) {
+    return `${CACHE_PREFIX}:${fingerprint(this.token || 'anonymous')}:${endpoint}`;
+  }
+
+  readCache(endpoint) {
+    if (!canCacheEndpoint(endpoint)) return null;
+    try {
+      const cached = JSON.parse(localStorage.getItem(this.getCacheKey(endpoint)) || 'null');
+      return cached?.data ?? null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  writeCache(endpoint, data) {
+    if (!canCacheEndpoint(endpoint)) return;
+    try {
+      localStorage.setItem(this.getCacheKey(endpoint), JSON.stringify({ data, savedAt: Date.now() }));
+    } catch (error) {
+      // Storage can be unavailable in private mode or full on older devices.
+    }
   }
 
   // Profile

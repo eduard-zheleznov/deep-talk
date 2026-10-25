@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
         setUser(profile);
       } catch (error) {
         console.error('Auth check failed:', error);
-        api.logout();
+        if (error.code !== 'OFFLINE') api.logout();
       }
     }
     setLoading(false);

@@ -38,6 +38,7 @@
         <noscript>You need to enable JavaScript to run this app.</noscript>
         <div id="root"></div>
         <script>
+            if (navigator.onLine) {
             !(function (t, e) {
                 var o, n, p, r;
                 e.__SV ||
@@ -103,6 +104,7 @@
                 api_host: "https://us.i.posthog.com",
                 person_profiles: "identified_only",
             });
+            }
         </script>
     </body>
 </html>
