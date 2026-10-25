@@ -139,6 +139,12 @@ class ApiClient {
     }
   }
 
+  updateCachedGroups(update) {
+    const groups = this.readCache('/api/groups');
+    if (!Array.isArray(groups)) return;
+    this.writeCache('/api/groups', update(groups));
+  }
+
   // Profile
   async getProfile() {
     return this.request('/api/profile');
@@ -153,10 +159,14 @@ class ApiClient {
 
   // Groups
   async createGroup(name) {
-    return this.request('/api/groups', {
+    const group = await this.request('/api/groups', {
       method: 'POST',
       body: JSON.stringify({ name }),
     });
+    this.updateCachedGroups((groups) => (
+      groups.some((item) => item.id === group.id) ? groups : [...groups, group]
+    ));
+    return group;
   }
 
   async getGroups() {
@@ -164,16 +174,23 @@ class ApiClient {
   }
 
   async setGroupArchived(groupId, archived) {
-    return this.request(`/api/groups/${groupId}/archive`, {
+    const group = await this.request(`/api/groups/${groupId}/archive`, {
       method: 'PUT',
       body: JSON.stringify({ archived }),
     });
+    this.updateCachedGroups((groups) => groups.map((item) => (
+      item.id === group.id ? group : item
+    )));
+    return group;
   }
 
   async deleteGroup(groupId) {
-    return this.request(`/api/groups/${groupId}`, {
+    const result = await this.request(`/api/groups/${groupId}`, {
       method: 'DELETE',
     });
+    this.updateCachedGroups((groups) => groups.filter((item) => item.id !== groupId));
+    localStorage.removeItem(this.getCacheKey(`/api/groups/${groupId}/question-config`));
+    return result;
   }
 
   async createInvite(groupId) {
@@ -183,9 +200,16 @@ class ApiClient {
   }
 
   async joinGroup(inviteCode) {
-    return this.request(`/api/groups/join/${inviteCode}`, {
+    const group = await this.request(`/api/groups/join/${inviteCode}`, {
       method: 'POST',
     });
+    this.updateCachedGroups((groups) => {
+      const exists = groups.some((item) => item.id === group.id);
+      return exists
+        ? groups.map((item) => item.id === group.id ? group : item)
+        : [...groups, group];
+    });
+    return group;
   }
 
   async updateMemberRole(groupId, memberId, role) {
