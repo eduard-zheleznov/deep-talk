@@ -45,16 +45,39 @@ export const questionManager = {
     return availableQuestions;
   },
 
-  // Get a random question from available questions
-  getRandomQuestion(questionSets, history) {
+  // Prefer questions seen by the fewest current members. A completion has
+  // stronger weight than any number of skips; equal-priority questions stay random.
+  getRandomQuestion(questionSets, history, questionPriority = {}) {
     const available = this.getAvailableQuestions(questionSets, history);
     
     if (available.length === 0) {
       return null;
     }
     
-    const randomIndex = Math.floor(Math.random() * available.length);
-    return available[randomIndex];
+    const getPriority = (question) => {
+      const priorityId = question.serverQuestionId || question.id;
+      const saved = questionPriority[priorityId] || {};
+      return {
+        completed: Math.max(0, Number(saved.completed_count) || 0),
+        skipped: Math.max(
+          history.skipped.includes(question.id) ? 1 : 0,
+          Math.max(0, Number(saved.skipped_count) || 0),
+        ),
+      };
+    };
+    const ranked = available.map((question) => ({ question, ...getPriority(question) }));
+    const best = ranked.reduce((current, candidate) => {
+      if (!current) return candidate;
+      if (candidate.completed !== current.completed) {
+        return candidate.completed < current.completed ? candidate : current;
+      }
+      return candidate.skipped < current.skipped ? candidate : current;
+    }, null);
+    const bestQuestions = ranked.filter((candidate) => (
+      candidate.completed === best.completed && candidate.skipped === best.skipped
+    ));
+    const randomIndex = Math.floor(Math.random() * bestQuestions.length);
+    return bestQuestions[randomIndex].question;
   },
 
   // Mark question as used

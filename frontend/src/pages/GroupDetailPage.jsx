@@ -64,6 +64,7 @@ const GroupDetailPage = () => {
   const [group, setGroup] = useState(null);
   const [categories, setCategories] = useState([]);
   const [history, setHistory] = useState({ used: [], skipped: [] });
+  const [questionPriority, setQuestionPriority] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [showQuestion, setShowQuestion] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -108,6 +109,7 @@ const GroupDetailPage = () => {
       setGroup(currentGroup);
       setCategories(normalizeQuestionSets(config.categories || []));
       setHistory(config.history || { used: [], skipped: [] });
+      setQuestionPriority(config.question_priority || {});
       setShowQuestion(false);
       setCurrentQuestion(null);
     } catch (error) {
@@ -132,6 +134,7 @@ const GroupDetailPage = () => {
       const config = await api.updateGroupQuestionCategories(groupId, normalizedCategories);
       setCategories(normalizeQuestionSets(config.categories || []));
       setHistory(config.history || { used: [], skipped: [] });
+      setQuestionPriority(config.question_priority || {});
       toast.success('Настройки вопросов сохранены');
     } catch (error) {
       setCategories(previousCategories);
@@ -153,6 +156,7 @@ const GroupDetailPage = () => {
         )
         : await api.updateGroupQuestionHistory(groupId, updatedHistory);
       setHistory(config.history || updatedHistory);
+      setQuestionPriority(config.question_priority || questionPriority);
       return true;
     } catch (error) {
       setHistory(previousHistory);
@@ -162,7 +166,7 @@ const GroupDetailPage = () => {
   };
 
   const selectQuestion = (sourceHistory = history) => {
-    const question = questionManager.getRandomQuestion(categories, sourceHistory);
+    const question = questionManager.getRandomQuestion(categories, sourceHistory, questionPriority);
 
     if (!question) {
       toast.error('Нет доступных вопросов. Выберите наборы или сбросьте историю.');
@@ -191,9 +195,11 @@ const GroupDetailPage = () => {
     });
     if (!saved) return;
 
-    if (currentQuestion.serverQuestionId) {
-      api.markQuestion(currentQuestion.serverQuestionId, 'completed', groupId).catch(() => {});
-    }
+    api.markQuestion(
+      currentQuestion.serverQuestionId || currentQuestion.id,
+      'completed',
+      groupId,
+    ).catch(() => {});
 
     selectQuestion(updatedHistory);
   };
@@ -212,9 +218,11 @@ const GroupDetailPage = () => {
     });
     if (!saved) return;
 
-    if (currentQuestion.serverQuestionId) {
-      api.markQuestion(currentQuestion.serverQuestionId, 'skipped', groupId).catch(() => {});
-    }
+    api.markQuestion(
+      currentQuestion.serverQuestionId || currentQuestion.id,
+      'skipped',
+      groupId,
+    ).catch(() => {});
 
     selectQuestion(updatedHistory);
   };

@@ -100,6 +100,7 @@ class GroupQuestionConfig(BaseModel):
     history: Dict[str, List[str]] = Field(
         default_factory=lambda: {"used": [], "skipped": []}
     )
+    question_priority: Dict[str, Dict[str, int]] = Field(default_factory=dict)
 
 class GroupQuestionCategoriesUpdate(BaseModel):
     categories: List[Dict[str, Any]] = Field(default_factory=list)

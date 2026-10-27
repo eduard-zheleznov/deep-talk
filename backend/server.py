@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 import secrets
 import string
 import hashlib
+import random
 
 from models import (
     UserCreate, UserLogin, UserResponse, UserUpdate, UserInDB,
@@ -26,6 +27,7 @@ from models import (
 from auth import (
     get_password_hash, verify_password, create_access_token, decode_access_token
 )
+from question_priority import aggregate_question_priority, priority_key
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -198,6 +200,31 @@ def normalize_question_history(history: Optional[dict]) -> dict:
         "skipped": list(history.get("skipped", [])),
     }
 
+
+async def get_member_question_priority(member_ids: List[str]) -> dict:
+    """Count prior completions and skips among the current conversation members."""
+    if not member_ids:
+        return {}
+
+    progress = await user_questions_collection.find({
+        "$or": [
+            {"user_id": {"$in": member_ids}},
+            {"answered_with_users": {"$in": member_ids}},
+        ],
+        "status": {"$in": [QuestionStatus.COMPLETED.value, QuestionStatus.SKIPPED.value]},
+    }).to_list(10000)
+    return aggregate_question_priority(progress, member_ids=member_ids)
+
+
+def get_discussion_member_ids(group: dict) -> List[str]:
+    roles = group.get("member_roles", {})
+    return [
+        member_id
+        for member_id in group.get("member_ids", [])
+        if roles.get(member_id, GroupRole.PARTICIPANT.value) != GroupRole.OBSERVER.value
+    ]
+
+
 async def get_group_for_member(group_id: str, current_user: UserInDB) -> dict:
     group = await groups_collection.find_one({"id": group_id})
     if not group or current_user.id not in group.get("member_ids", []):
@@ -221,7 +248,12 @@ async def get_group_question_config_data(group: dict) -> dict:
         await groups_collection.update_one({"id": group["id"]}, {"$set": updates})
         group.update(updates)
 
-    return {"categories": categories, "history": history}
+    question_priority = await get_member_question_priority(get_discussion_member_ids(group))
+    return {
+        "categories": categories,
+        "history": history,
+        "question_priority": question_priority,
+    }
 
 # ==================== AUTH ENDPOINTS ====================
 
@@ -530,45 +562,27 @@ async def get_next_question(
         raise HTTPException(status_code=403, detail="Not a member of this group")
     group = await ensure_group_roles(group)
     
-    # Get user's answered questions
+    # Keep this compatibility endpoint aligned with the client-side/offline
+    # selector: fewer completions first, then fewer skips, random within a tie.
     user_progress = await user_questions_collection.find(
         {"user_id": current_user.id}
     ).to_list(1000)
-    
-    answered_question_ids = [p["question_id"] for p in user_progress]
-    
+
     # Get all questions
     all_questions = await questions_collection.find({}).to_list(1000)
-    
-    # Priority 1: Questions not answered by majority of group members
-    unanswered_by_majority = []
-    answered_by_user = []
-    
-    for question in all_questions:
-        q_id = question["id"]
-        
-        # Count how many group members answered this
-        answered_count = await user_questions_collection.count_documents({
-            "question_id": q_id,
-            "user_id": {"$in": group["member_ids"]},
-            "status": {"$in": [QuestionStatus.COMPLETED, QuestionStatus.SKIPPED]}
-        })
-        
-        majority_threshold = len(group["member_ids"]) / 2
-        
-        if q_id not in answered_question_ids and answered_count < majority_threshold:
-            unanswered_by_majority.append(question)
-        elif q_id in answered_question_ids:
-            answered_by_user.append(question)
-    
-    # Choose question
-    if unanswered_by_majority:
-        next_question = unanswered_by_majority[0]
-    elif answered_by_user:
-        next_question = answered_by_user[0]
+    question_priority = await get_member_question_priority(get_discussion_member_ids(group))
+    if all_questions:
+        best_priority = min(
+            priority_key(question_priority.get(question["id"], {}))
+            for question in all_questions
+        )
+        best_questions = [
+            question for question in all_questions
+            if priority_key(question_priority.get(question["id"], {})) == best_priority
+        ]
+        next_question = random.choice(best_questions)
     else:
-        # All questions exhausted, start over
-        next_question = all_questions[0] if all_questions else None
+        next_question = None
     
     if not next_question:
         raise HTTPException(status_code=404, detail="No questions available")
@@ -593,6 +607,7 @@ async def mark_question(
     current_user: UserInDB = Depends(get_current_user)
 ):
     """Mark question as completed or skipped"""
+    group = None
     if group_id:
         group = await groups_collection.find_one({"id": group_id})
         if not group or current_user.id not in group["member_ids"]:
@@ -602,22 +617,38 @@ async def mark_question(
         if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
             raise HTTPException(status_code=403, detail="Observers cannot mark questions")
     
-    # Check if already marked
+    # A completion is permanent for prioritization: a later skip must not
+    # downgrade a question that the user has already discussed.
     existing = await user_questions_collection.find_one({
         "user_id": current_user.id,
         "question_id": question_id
     })
     
+    requested_status = status.value
+    discussed_with = (
+        [member_id for member_id in get_discussion_member_ids(group) if member_id != current_user.id]
+        if group and requested_status == QuestionStatus.COMPLETED.value
+        else []
+    )
     if existing:
-        # Update status
+        next_status = (
+            QuestionStatus.COMPLETED.value
+            if existing.get("status") == QuestionStatus.COMPLETED.value
+            or requested_status == QuestionStatus.COMPLETED.value
+            else QuestionStatus.SKIPPED.value
+        )
+        update = {
+            "$set": {
+                "status": next_status,
+                "answered_at": datetime.now(timezone.utc).isoformat()
+            }
+        }
+        if next_status == QuestionStatus.COMPLETED.value and discussed_with:
+            update["$addToSet"] = {"answered_with_users": {"$each": discussed_with}}
+
         await user_questions_collection.update_one(
             {"id": existing["id"]},
-            {
-                "$set": {
-                    "status": status,
-                    "answered_at": datetime.now(timezone.utc).isoformat()
-                }
-            }
+            update,
         )
     else:
         # Create new progress entry
@@ -625,13 +656,15 @@ async def mark_question(
             "id": str(uuid.uuid4()),
             "user_id": current_user.id,
             "question_id": question_id,
-            "status": status,
-            "answered_with_users": [],
+            "status": requested_status,
+            "answered_with_users": discussed_with,
             "answered_at": datetime.now(timezone.utc).isoformat()
         }
         await user_questions_collection.insert_one(progress_dict)
     
-    return {"success": True, "status": status}
+        next_status = requested_status
+
+    return {"success": True, "status": next_status}
 
 # ==================== SEED QUESTIONS ====================
 
