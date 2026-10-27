@@ -272,6 +272,16 @@ const GroupDetailPage = () => {
     }
   };
 
+  const copyInviteCode = async () => {
+    if (!inviteData?.invite_code) return;
+    try {
+      await copyText(inviteData.invite_code);
+      toast.success('Код скопирован');
+    } catch (error) {
+      toast.error('Не удалось скопировать код');
+    }
+  };
+
   const handleRoleChange = async (memberId, role) => {
     setRoleSavingMemberId(memberId);
     try {
@@ -371,9 +381,9 @@ const GroupDetailPage = () => {
             <DialogDescription><span className="block">Отправьте эту ссылку тому,</span><span className="block">кого хотите пригласить.</span></DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <div className="rounded-lg border border-border bg-muted/40 p-3 text-center">
-              <p className="text-sm font-semibold tracking-wide">Код: {inviteData?.invite_code}</p>
-            </div>
+            <button type="button" onClick={copyInviteCode} className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 p-3 text-sm font-semibold tracking-wide transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Скопировать код ${inviteData?.invite_code || ''}`}>
+              <span>Код: {inviteData?.invite_code}</span><Copy className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+            </button>
             <Button onClick={copyInviteLink} className="w-full h-12">
               <Copy className="w-4 h-4 mr-2" />
               Скопировать ссылку

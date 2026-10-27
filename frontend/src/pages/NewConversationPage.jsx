@@ -95,6 +95,26 @@ export const NewConversationPage = () => {
 
   const inviteLink = invite?.invite_url ? new URL(invite.invite_url, window.location.origin).toString() : '';
 
+  const copyInviteCode = async () => {
+    if (!invite?.invite_code) return;
+    try {
+      await copyText(invite.invite_code);
+      toast.success('Код скопирован');
+    } catch (error) {
+      toast.error('Не удалось скопировать код');
+    }
+  };
+
+  const copyInviteLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await copyText(inviteLink);
+      toast.success('Ссылка скопирована');
+    } catch (error) {
+      toast.error('Не удалось скопировать ссылку');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-muted/25 pb-24">
       <AppHeader onTitleClick={() => navigate('/groups')} />
@@ -125,7 +145,13 @@ export const NewConversationPage = () => {
 
       <CategorySelector categories={categories} onUpdate={updateThemes} open={themesOpen} onOpenChange={setThemesOpen} trigger={null} />
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <DialogContent className="max-w-md"><DialogHeader><DialogTitle>Пригласить в разговор</DialogTitle><DialogDescription><span className="block">Отправьте эту ссылку тому,</span><span className="block">кого хотите пригласить.</span></DialogDescription></DialogHeader><div className="rounded-xl border bg-muted/40 p-3 text-center text-sm font-semibold tracking-wide">Код: {invite?.invite_code}</div><Button onClick={async () => { await copyText(inviteLink); toast.success('Ссылка скопирована'); }}><Copy className="mr-2 h-4 w-4" />Скопировать ссылку</Button></DialogContent>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Пригласить в разговор</DialogTitle><DialogDescription><span className="block">Отправьте эту ссылку тому,</span><span className="block">кого хотите пригласить.</span></DialogDescription></DialogHeader>
+          <button type="button" onClick={copyInviteCode} className="flex w-full items-center justify-center gap-2 rounded-xl border bg-muted/40 p-3 text-sm font-semibold tracking-wide transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Скопировать код ${invite?.invite_code || ''}`}>
+            <span>Код: {invite?.invite_code}</span><Copy className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+          </button>
+          <Button onClick={copyInviteLink}><Copy className="mr-2 h-4 w-4" />Скопировать ссылку</Button>
+        </DialogContent>
       </Dialog>
     </div>
   );
