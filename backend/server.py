@@ -111,7 +111,7 @@ def normalize_member_roles(group: dict) -> dict:
     """Backfill and validate member roles for old and new group documents."""
     member_ids = list(dict.fromkeys(group.get("member_ids", [])))
     raw_roles = group.get("member_roles") or {}
-    valid_roles = {role.value for role in GroupRole}
+    valid_roles = {GroupRole.HOST.value, GroupRole.PARTICIPANT.value}
     normalized = {}
 
     for member_id in member_ids:
@@ -129,15 +129,50 @@ def normalize_member_roles(group: dict) -> dict:
 
     return normalized
 
+
+def normalize_member_role_permissions(group: dict, normalized_roles: dict) -> dict:
+    """Keep role delegation explicit while preserving access for legacy hosts."""
+    raw_permissions = group.get("member_role_permissions") or {}
+    raw_roles = group.get("member_roles") or {}
+    creator_id = group.get("creator_id")
+    normalized = {}
+
+    for member_id, role in normalized_roles.items():
+        if role != GroupRole.HOST.value:
+            continue
+        if member_id == creator_id:
+            normalized[member_id] = True
+        elif member_id in raw_permissions:
+            normalized[member_id] = bool(raw_permissions[member_id])
+        else:
+            # Before this permission existed every host could manage roles.
+            normalized[member_id] = raw_roles.get(member_id) == GroupRole.HOST.value
+
+    return normalized
+
+
+def can_manage_member_roles(group: dict, member_id: str) -> bool:
+    return (
+        group.get("member_roles", {}).get(member_id) == GroupRole.HOST.value
+        and bool(group.get("member_role_permissions", {}).get(member_id))
+    )
+
 async def ensure_group_roles(group: dict) -> dict:
     """Persist normalized roles when a group was created before roles existed."""
     normalized_roles = normalize_member_roles(group)
+    normalized_permissions = normalize_member_role_permissions(group, normalized_roles)
+    updates = {}
     if group.get("member_roles") != normalized_roles:
+        updates["member_roles"] = normalized_roles
+    if group.get("member_role_permissions") != normalized_permissions:
+        updates["member_role_permissions"] = normalized_permissions
+    if updates:
         await groups_collection.update_one(
             {"id": group["id"]},
-            {"$set": {"member_roles": normalized_roles}}
+            {"$set": updates}
         )
-        group["member_roles"] = normalized_roles
+    group["member_roles"] = normalized_roles
+    group["member_role_permissions"] = normalized_permissions
     return group
 
 async def build_group_response(group: dict, current_user: UserInDB) -> GroupResponse:
@@ -149,6 +184,7 @@ async def build_group_response(group: dict, current_user: UserInDB) -> GroupResp
     return GroupResponse(
         **group,
         current_user_role=group["member_roles"].get(current_user.id),
+        current_user_can_manage_roles=can_manage_member_roles(group, current_user.id),
         members=[UserResponse(**member) for member in members],
         is_archived=current_user.id in group.get("archived_by", []),
         can_delete=group.get("creator_id") == current_user.id,
@@ -217,12 +253,7 @@ async def get_member_question_priority(member_ids: List[str]) -> dict:
 
 
 def get_discussion_member_ids(group: dict) -> List[str]:
-    roles = group.get("member_roles", {})
-    return [
-        member_id
-        for member_id in group.get("member_ids", [])
-        if roles.get(member_id, GroupRole.PARTICIPANT.value) != GroupRole.OBSERVER.value
-    ]
+    return list(group.get("member_ids", []))
 
 
 async def get_group_for_member(group_id: str, current_user: UserInDB) -> dict:
@@ -338,6 +369,7 @@ async def create_group(
         "creator_id": current_user.id,
         "member_ids": [current_user.id],
         "member_roles": {current_user.id: GroupRole.HOST.value},
+        "member_role_permissions": {current_user.id: True},
         "archived_by": [],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -409,8 +441,6 @@ async def create_invite(
         raise HTTPException(status_code=403, detail="Not a member of this group")
     
     group = await ensure_group_roles(group)
-    if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
-        raise HTTPException(status_code=403, detail="Observers cannot create invites")
     
     # Generate invite code
     invite_code = generate_invite_code()
@@ -471,7 +501,7 @@ async def update_group_member_role(
     role_update: GroupRoleUpdate,
     current_user: UserInDB = Depends(get_current_user)
 ):
-    """Update a group member role. Only hosts can manage roles."""
+    """Update a member role and optional role-delegation permission."""
     group = await groups_collection.find_one({"id": group_id})
     
     if not group:
@@ -482,23 +512,36 @@ async def update_group_member_role(
     
     group = await ensure_group_roles(group)
     
-    if group["member_roles"].get(current_user.id) != GroupRole.HOST.value:
-        raise HTTPException(status_code=403, detail="Only hosts can manage roles")
+    if not can_manage_member_roles(group, current_user.id):
+        raise HTTPException(status_code=403, detail="Role management permission required")
     
     if member_id not in group["member_ids"]:
         raise HTTPException(status_code=404, detail="Member not found in this group")
+    if member_id == group.get("creator_id") and role_update.role != GroupRole.HOST:
+        raise HTTPException(status_code=400, detail="Conversation creator must remain an administrator")
     
     updated_roles = dict(group["member_roles"])
     updated_roles[member_id] = role_update.role.value
+    updated_permissions = dict(group.get("member_role_permissions", {}))
+    if role_update.role == GroupRole.HOST:
+        updated_permissions[member_id] = (
+            True if member_id == group.get("creator_id") else role_update.can_manage_roles
+        )
+    else:
+        updated_permissions.pop(member_id, None)
     
     if GroupRole.HOST.value not in updated_roles.values():
         raise HTTPException(status_code=400, detail="Group must have at least one host")
     
     await groups_collection.update_one(
         {"id": group_id},
-        {"$set": {"member_roles": updated_roles}}
+        {"$set": {
+            "member_roles": updated_roles,
+            "member_role_permissions": updated_permissions,
+        }}
     )
     group["member_roles"] = updated_roles
+    group["member_role_permissions"] = updated_permissions
     
     return await build_group_response(group, current_user)
 
@@ -537,9 +580,6 @@ async def update_group_question_history(
 ):
     """Persist shared question history for a group discussion."""
     group = await get_group_for_member(group_id, current_user)
-    if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
-        raise HTTPException(status_code=403, detail="Observers cannot update question history")
-    
     history = normalize_question_history(payload.history)
     await groups_collection.update_one(
         {"id": group_id},
@@ -614,8 +654,6 @@ async def mark_question(
             raise HTTPException(status_code=403, detail="Not a member of this group")
         
         group = await ensure_group_roles(group)
-        if group["member_roles"].get(current_user.id) == GroupRole.OBSERVER.value:
-            raise HTTPException(status_code=403, detail="Observers cannot mark questions")
     
     # A completion is permanent for prioritization: a later skip must not
     # downgrade a question that the user has already discussed.

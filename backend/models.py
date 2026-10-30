@@ -11,7 +11,6 @@ class QuestionStatus(str, Enum):
 class GroupRole(str, Enum):
     HOST = "host"
     PARTICIPANT = "participant"
-    OBSERVER = "observer"
 
 # User Models
 class UserBase(BaseModel):
@@ -76,6 +75,7 @@ class GroupInDB(GroupBase):
     creator_id: str
     member_ids: List[str] = Field(default_factory=list)
     member_roles: Dict[str, GroupRole] = Field(default_factory=dict)
+    member_role_permissions: Dict[str, bool] = Field(default_factory=dict)
     archived_by: List[str] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -84,7 +84,9 @@ class GroupResponse(GroupBase):
     creator_id: str
     member_ids: List[str]
     member_roles: Dict[str, GroupRole] = Field(default_factory=dict)
+    member_role_permissions: Dict[str, bool] = Field(default_factory=dict)
     current_user_role: Optional[GroupRole] = None
+    current_user_can_manage_roles: bool = False
     members: List[UserResponse] = Field(default_factory=list)
     is_archived: bool = False
     can_delete: bool = False
@@ -94,6 +96,7 @@ class GroupArchiveUpdate(BaseModel):
 
 class GroupRoleUpdate(BaseModel):
     role: GroupRole
+    can_manage_roles: bool = False
 
 class GroupQuestionConfig(BaseModel):
     categories: List[Dict[str, Any]] = Field(default_factory=list)

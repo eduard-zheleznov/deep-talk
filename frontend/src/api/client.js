@@ -326,10 +326,10 @@ class ApiClient {
     return group;
   }
 
-  async updateMemberRole(groupId, memberId, role) {
+  async updateMemberRole(groupId, memberId, role, canManageRoles = false) {
     return this.request(`/api/groups/${groupId}/members/${memberId}/role`, {
       method: 'PUT',
-      body: JSON.stringify({ role }),
+      body: JSON.stringify({ role, can_manage_roles: canManageRoles }),
     });
   }
 

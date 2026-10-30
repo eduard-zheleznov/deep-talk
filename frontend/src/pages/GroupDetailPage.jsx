@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import { Checkbox } from '../components/ui/checkbox';
+import { Label } from '../components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,21 +25,18 @@ import { CheckSquare, Copy, History, Share2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ROLE_LABELS = {
-  host: 'Организатор',
+  host: 'Администратор',
   participant: 'Участник',
-  observer: 'Наблюдатель',
 };
 
 const ROLE_DESCRIPTIONS = {
-  host: 'Управляет ролями, выбором тем и настройками вопросов.',
+  host: 'Управляет разговором, темами и настройками вопросов.',
   participant: 'Обсуждает вопросы, отмечает историю и может приглашать.',
-  observer: 'Смотрит вопросы и историю без изменения прогресса.',
 };
 
 const ROLE_OPTIONS = [
   { value: 'host', label: ROLE_LABELS.host },
   { value: 'participant', label: ROLE_LABELS.participant },
-  { value: 'observer', label: ROLE_LABELS.observer },
 ];
 
 const copyText = async (text) => {
@@ -80,11 +79,8 @@ const GroupDetailPage = () => {
     return group.current_user_role || group.member_roles?.[user.id] || (group.creator_id === user.id ? 'host' : 'participant');
   }, [group, user]);
 
-  const canManageRoles = currentUserRole === 'host';
+  const canManageRoles = Boolean(group?.current_user_can_manage_roles);
   const canManageQuestions = currentUserRole === 'host';
-  const canShareInvite = currentUserRole !== 'observer';
-  const canUseQuestionActions = currentUserRole !== 'observer';
-  const hostCount = Object.values(group?.member_roles || {}).filter((role) => role === 'host').length;
   const hasEnabledCategories = hasEnabledQuestions(categories);
 
   useEffect(() => {
@@ -183,10 +179,6 @@ const GroupDetailPage = () => {
 
   const handleMarkUsed = async () => {
     if (!currentQuestion) return;
-    if (!canUseQuestionActions) {
-      toast.info('Наблюдатель не может менять историю вопросов');
-      return;
-    }
 
     const updatedHistory = questionManager.markAsUsed(currentQuestion.id, history);
     const saved = await persistHistory(updatedHistory, {
@@ -206,10 +198,6 @@ const GroupDetailPage = () => {
 
   const handleNext = async () => {
     if (!currentQuestion) return;
-    if (!canUseQuestionActions) {
-      toast.info('Наблюдатель не может менять историю вопросов');
-      return;
-    }
 
     const updatedHistory = questionManager.markAsSkipped(currentQuestion.id, history);
     const saved = await persistHistory(updatedHistory, {
@@ -245,11 +233,6 @@ const GroupDetailPage = () => {
   };
 
   const handleGenerateInvite = async () => {
-    if (!canShareInvite) {
-      toast.info('Наблюдатель не может создавать приглашения');
-      return;
-    }
-
     try {
       const data = await api.createInvite(groupId);
       setInviteData(data);
@@ -290,10 +273,10 @@ const GroupDetailPage = () => {
     }
   };
 
-  const handleRoleChange = async (memberId, role) => {
+  const handleRoleChange = async (memberId, role, canDelegate = false) => {
     setRoleSavingMemberId(memberId);
     try {
-      const updatedGroup = await api.updateMemberRole(groupId, memberId, role);
+      const updatedGroup = await api.updateMemberRole(groupId, memberId, role, canDelegate);
       setGroup(updatedGroup);
       toast.success('Роль обновлена');
     } catch (error) {
@@ -354,12 +337,6 @@ const GroupDetailPage = () => {
 
           <TimerSection />
 
-          {!canUseQuestionActions && (
-            <div className="rounded-xl border border-border/50 bg-card px-4 py-3 text-center text-sm text-muted-foreground">
-              Наблюдатель может смотреть вопросы и историю, но не меняет прогресс разговора.
-            </div>
-          )}
-
         </div>
       </main>
       <BottomNav />
@@ -404,7 +381,7 @@ const GroupDetailPage = () => {
         <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Роли участников</DialogTitle>
-            <DialogDescription>Организатор управляет ролями и настройками вопросов в этом разговоре.</DialogDescription>
+            <DialogDescription>Администратор управляет разговором. Право назначать администраторов выдаётся отдельно.</DialogDescription>
           </DialogHeader>
           <div className="mt-4 grid gap-2 rounded-xl border border-border/50 bg-muted/40 p-3 text-xs text-muted-foreground">
             {ROLE_OPTIONS.map((option) => (
@@ -416,12 +393,13 @@ const GroupDetailPage = () => {
           <div className="space-y-3 mt-4">
             {(group?.members || []).map((member) => {
               const role = group?.member_roles?.[member.id] || (member.id === group?.creator_id ? 'host' : 'participant');
+              const canDelegate = Boolean(group?.member_role_permissions?.[member.id]);
               const isCurrentUser = member.id === user?.id;
-              const canChangeThisRole = canManageRoles && !(isCurrentUser && role === 'host' && hostCount <= 1);
-              const isOnlyHost = isCurrentUser && role === 'host' && hostCount <= 1;
+              const isCreator = member.id === group?.creator_id;
+              const canChangeThisRole = canManageRoles && !isCreator;
 
               return (
-                <div key={member.id} className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/60 p-3">
+                <div key={member.id} className="flex flex-col items-stretch gap-3 rounded-lg border border-border/50 bg-background/60 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
                       {member.name || member.email}
@@ -430,18 +408,31 @@ const GroupDetailPage = () => {
                     <p className="text-xs text-muted-foreground">
                       {!canManageRoles ? ROLE_LABELS[role] : ROLE_DESCRIPTIONS[role]}
                     </p>
-                    {isOnlyHost && (
-                      <p className="mt-1 text-xs text-muted-foreground">Нужен хотя бы один организатор.</p>
+                    {isCreator && (
+                      <p className="mt-1 text-xs text-muted-foreground">Главный администратор</p>
+                    )}
+                    {role === 'host' && !isCreator && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Checkbox
+                          id={`delegate-${member.id}`}
+                          checked={canDelegate}
+                          disabled={!canManageRoles || roleSavingMemberId === member.id}
+                          onCheckedChange={(checked) => handleRoleChange(member.id, 'host', checked === true)}
+                        />
+                        <Label htmlFor={`delegate-${member.id}`} className="text-xs font-normal text-muted-foreground">
+                          Может управлять ролями
+                        </Label>
+                      </div>
                     )}
                   </div>
 
                   {canManageRoles ? (
                     <Select
                       value={role}
-                      onValueChange={(value) => handleRoleChange(member.id, value)}
+                      onValueChange={(value) => handleRoleChange(member.id, value, false)}
                       disabled={!canChangeThisRole || roleSavingMemberId === member.id}
                     >
-                      <SelectTrigger className="h-9 w-[132px] bg-card">
+                      <SelectTrigger className="h-10 w-full bg-card sm:w-[148px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -457,20 +448,18 @@ const GroupDetailPage = () => {
               );
             })}
           </div>
-          {canShareInvite && (
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-4 h-11 w-full"
-              onClick={() => {
-                setRolesDialog(false);
-                handleGenerateInvite();
-              }}
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Пригласить участника
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 h-11 w-full"
+            onClick={() => {
+              setRolesDialog(false);
+              handleGenerateInvite();
+            }}
+          >
+            <Share2 className="mr-2 h-4 w-4" />
+            Пригласить участника
+          </Button>
         </DialogContent>
       </Dialog>
     </div>

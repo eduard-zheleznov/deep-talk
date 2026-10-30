@@ -253,10 +253,11 @@ class TestGroupEndpoints:
 class TestGroupRoles:
     """Role and share-link behavior for full group sessions"""
 
-    def test_host_can_share_full_link_and_manage_member_role(self, api_client):
-        """Creator is host, invitees join as participants, and observers cannot mark questions"""
+    def test_admin_can_delegate_role_management_separately(self, api_client):
+        """An administrator manages the conversation but delegates roles only when allowed."""
         host_email = f"host_{uuid.uuid4().hex[:8]}@test.com"
         guest_email = f"guest_{uuid.uuid4().hex[:8]}@test.com"
+        third_email = f"third_{uuid.uuid4().hex[:8]}@test.com"
 
         host_registration = api_client.post(f"{BASE_URL}/api/auth/register", json={
             "email": host_email,
@@ -280,6 +281,8 @@ class TestGroupRoles:
         host_id = group["creator_id"]
         assert group["member_roles"][host_id] == "host"
         assert group["current_user_role"] == "host"
+        assert group["current_user_can_manage_roles"] is True
+        assert group["member_role_permissions"][host_id] is True
 
         invite_response = requests.post(f"{BASE_URL}/api/groups/{group_id}/invite", headers=host_headers)
         assert invite_response.status_code == 200, invite_response.text
@@ -309,22 +312,72 @@ class TestGroupRoles:
 
         role_response = requests.put(
             f"{BASE_URL}/api/groups/{group_id}/members/{guest_id}/role",
-            json={"role": "observer"},
+            json={"role": "host", "can_manage_roles": False},
             headers=host_headers
         )
         assert role_response.status_code == 200, role_response.text
         updated_group = role_response.json()
-        assert updated_group["member_roles"][guest_id] == "observer"
+        assert updated_group["member_roles"][guest_id] == "host"
+        assert updated_group["member_role_permissions"][guest_id] is False
 
-        question_response = requests.get(f"{BASE_URL}/api/questions/next/{group_id}", headers=guest_headers)
-        assert question_response.status_code == 200, question_response.text
-        question_id = question_response.json()["question"]["id"]
+        third_registration = api_client.post(f"{BASE_URL}/api/auth/register", json={
+            "email": third_email,
+            "password": "password123",
+            "secret_question": "Test?",
+            "secret_answer": "test",
+            "name": "Third"
+        })
+        assert third_registration.status_code == 200, third_registration.text
+        third_token = third_registration.json()["access_token"]
+        third_headers = {"Authorization": f"Bearer {third_token}", "Content-Type": "application/json"}
 
-        mark_response = requests.post(
-            f"{BASE_URL}/api/questions/{question_id}/mark?status=completed&group_id={group_id}",
+        third_join = requests.post(
+            f"{BASE_URL}/api/groups/join/{invite['invite_code']}",
+            headers=third_headers
+        )
+        assert third_join.status_code == 200, third_join.text
+        third_id = next(
+            member_id for member_id in third_join.json()["member_ids"]
+            if member_id not in {host_id, guest_id}
+        )
+
+        denied_delegation = requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/members/{third_id}/role",
+            json={"role": "host", "can_manage_roles": True},
             headers=guest_headers
         )
-        assert mark_response.status_code == 403
+        assert denied_delegation.status_code == 403
+
+        grant_delegation = requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/members/{guest_id}/role",
+            json={"role": "host", "can_manage_roles": True},
+            headers=host_headers
+        )
+        assert grant_delegation.status_code == 200, grant_delegation.text
+        assert grant_delegation.json()["member_role_permissions"][guest_id] is True
+
+        delegated_update = requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/members/{third_id}/role",
+            json={"role": "host", "can_manage_roles": False},
+            headers=guest_headers
+        )
+        assert delegated_update.status_code == 200, delegated_update.text
+        assert delegated_update.json()["member_roles"][third_id] == "host"
+        assert delegated_update.json()["member_role_permissions"][third_id] is False
+
+        creator_demotion = requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/members/{host_id}/role",
+            json={"role": "participant"},
+            headers=guest_headers
+        )
+        assert creator_demotion.status_code == 400
+
+        removed_role = requests.put(
+            f"{BASE_URL}/api/groups/{group_id}/members/{third_id}/role",
+            json={"role": "observer"},
+            headers=host_headers
+        )
+        assert removed_role.status_code == 422
 
     def test_only_creator_can_delete_archived_group_and_invites_are_removed(self, api_client):
         creator = api_client.post(f"{BASE_URL}/api/auth/register", json={
