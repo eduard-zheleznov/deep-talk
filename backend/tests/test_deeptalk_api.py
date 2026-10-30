@@ -287,7 +287,7 @@ class TestGroupRoles:
         invite_response = requests.post(f"{BASE_URL}/api/groups/{group_id}/invite", headers=host_headers)
         assert invite_response.status_code == 200, invite_response.text
         invite = invite_response.json()
-        assert invite["invite_url"].endswith(f"/DeepTalk/join/{invite['invite_code']}")
+        assert invite["invite_url"].endswith(f"/join/{invite['invite_code']}")
 
         guest_registration = api_client.post(f"{BASE_URL}/api/auth/register", json={
             "email": guest_email,
