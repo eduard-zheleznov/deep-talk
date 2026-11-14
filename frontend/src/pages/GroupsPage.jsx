@@ -119,7 +119,7 @@ const GroupsPage = () => {
     <div className="min-h-screen bg-muted/25 pb-24">
       <AppHeader />
       <main className="mx-auto max-w-2xl px-4 py-6">
-        <div><h1 className="text-2xl font-bold tracking-tight">Разговоры</h1><p className="mt-1 text-sm text-muted-foreground">Выберите разговор или начните новый</p></div>
+        <div className="text-center"><h1 className="text-2xl font-bold tracking-tight">Разговоры</h1><p className="mt-1 text-sm text-muted-foreground">Выберите разговор или начните новый</p></div>
 
         <Button type="button" onClick={() => navigate('/new-conversation')} className="mt-5 h-14 w-full rounded-xl text-base shadow-sm">
           <Plus className="mr-2 h-5 w-5" />Новый разговор

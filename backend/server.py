@@ -15,6 +15,7 @@ import secrets
 import string
 import hashlib
 import random
+import json
 
 from models import (
     UserCreate, UserLogin, UserResponse, UserUpdate, UserInDB,
@@ -31,6 +32,8 @@ from question_priority import aggregate_question_priority, priority_key
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+with open(ROOT_DIR / "parent_question_set.json", encoding="utf-8") as parent_set_file:
+    PARENT_QUESTION_SET = json.load(parent_set_file)
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
@@ -228,6 +231,38 @@ def build_default_question_categories(questions: List[dict]) -> List[dict]:
         "subcategories": categories,
     }]
 
+
+def include_global_question_sets(categories: List[dict]) -> List[dict]:
+    """Expose shared sets to every conversation without enabling them by default."""
+    result = list(categories or [])
+    existing_index = next(
+        (index for index, item in enumerate(result) if item.get("id") == PARENT_QUESTION_SET["id"]),
+        None,
+    )
+    if existing_index is None:
+        result.append(PARENT_QUESTION_SET)
+    else:
+        # Keep the canonical question text/categories, but preserve this
+        # conversation's enablement and per-question selection state.
+        existing = result[existing_index]
+        parent_set = {
+            **PARENT_QUESTION_SET,
+            "enabled": existing.get("enabled", False),
+            "subcategories": [],
+        }
+        existing_subcategories = {
+            item.get("id"): item for item in existing.get("subcategories", [])
+        }
+        for canonical in PARENT_QUESTION_SET["subcategories"]:
+            prior = existing_subcategories.get(canonical["id"], {})
+            parent_set["subcategories"].append({
+                **canonical,
+                "enabled": prior.get("enabled", canonical["enabled"]),
+                "disabledQuestions": prior.get("disabledQuestions", []),
+            })
+        result[existing_index] = parent_set
+    return result
+
 def normalize_question_history(history: Optional[dict]) -> dict:
     if not history:
         return {"used": [], "skipped": []}
@@ -281,7 +316,7 @@ async def get_group_question_config_data(group: dict) -> dict:
 
     question_priority = await get_member_question_priority(get_discussion_member_ids(group))
     return {
-        "categories": categories,
+        "categories": include_global_question_sets(categories),
         "history": history,
         "question_priority": question_priority,
     }

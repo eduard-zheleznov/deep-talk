@@ -465,11 +465,16 @@ class TestGroupRoles:
         )
         assert config_response.status_code == 200, config_response.text
         config = config_response.json()
-        assert len(config["categories"]) == 1
+        assert len(config["categories"]) == 2
         base_set = config["categories"][0]
         assert base_set["type"] == "question_set"
         assert base_set["name"] == "Базовый набор № 1"
         assert sum(len(category["questions"]) for category in base_set["subcategories"]) == 100
+        parent_set = next(item for item in config["categories"] if item["id"] == "set_for_parents")
+        assert parent_set["name"] == "Для родителей"
+        assert parent_set["enabled"] is False
+        assert len(parent_set["subcategories"]) == 10
+        assert all(len(category["questions"]) == 10 for category in parent_set["subcategories"])
         assert config["history"] == {"used": [], "skipped": []}
 
         first_category = base_set["subcategories"][0]
