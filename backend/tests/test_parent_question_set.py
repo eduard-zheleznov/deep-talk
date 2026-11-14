@@ -1,5 +1,12 @@
 import json
+import os
 from pathlib import Path
+import sys
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_DIR))
+os.environ.setdefault("MONGO_URL", "mongodb://127.0.0.1:27017")
+os.environ.setdefault("DB_NAME", "deeptalk_test")
 
 from server import include_global_question_sets
 
