@@ -1,4 +1,8 @@
-const API_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+const API_URL = process.env.REACT_APP_BACKEND_URL || (
+  process.env.NODE_ENV === 'production'
+    ? process.env.PUBLIC_URL || ''
+    : 'http://localhost:8001'
+);
 const CACHE_PREFIX = 'pro_obshenie_api_cache_v1';
 const QUEUE_PREFIX = 'pro_obshenie_offline_queue_v1';
 
