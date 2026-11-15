@@ -135,7 +135,7 @@ export const CategorySelector = ({ categories, onUpdate, children, open: control
 
                   return (
                     <AccordionItem key={questionSet.id} value={questionSet.id} className="rounded-xl border bg-card px-4 shadow-sm">
-                      <AccordionTrigger className="hover:no-underline">
+                      <AccordionTrigger className="min-w-0 hover:no-underline">
                         <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
                           <div className="flex min-w-0 items-center gap-3">
                             <Checkbox
@@ -144,8 +144,8 @@ export const CategorySelector = ({ categories, onUpdate, children, open: control
                               onClick={(event) => event.stopPropagation()}
                               className="h-5 w-5"
                             />
-                            <div className="min-w-0 text-left">
-                              <span className="block truncate font-medium">{questionSet.name}</span>
+                            <div className="min-w-0 flex-1 text-left">
+                              <span className="block whitespace-normal break-words font-medium leading-snug">{questionSet.name}</span>
                               <span className="block text-xs text-muted-foreground">
                                 {formatRuCount(setStats.subcategories, ['раздел', 'раздела', 'разделов'])}
                               </span>
@@ -170,17 +170,17 @@ export const CategorySelector = ({ categories, onUpdate, children, open: control
                                 value={subcategory.id}
                                 className="rounded-lg border border-border/70 bg-muted/20 px-3"
                               >
-                                <AccordionTrigger className="py-3 hover:no-underline">
+                                <AccordionTrigger className="min-w-0 py-3 hover:no-underline">
                                   <div className="flex min-w-0 flex-1 items-center justify-between gap-3 pr-3">
-                                    <div className="flex min-w-0 items-center gap-3">
+                                    <div className="flex min-w-0 flex-1 items-center gap-3">
                                       <Checkbox
                                         checked={subcategory.enabled}
                                         onCheckedChange={() => handleToggleSubcategory(questionSet.id, subcategory.id)}
                                         onClick={(event) => event.stopPropagation()}
                                       />
-                                      <span className="truncate text-left font-medium">{subcategory.name}</span>
+                                      <span className="min-w-0 flex-1 whitespace-normal break-words text-left font-medium leading-snug">{subcategory.name}</span>
                                     </div>
-                                    <span className="shrink-0 text-xs text-muted-foreground">
+                                    <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
                                       {activeQuestionsCount}/{subcategory.questions.length}
                                     </span>
                                   </div>
